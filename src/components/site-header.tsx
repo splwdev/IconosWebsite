@@ -17,8 +17,8 @@ export function SiteHeader() {
           <Image
             src="/logo.png"
             alt="Iconos Group — Your legal team, tailored"
-            width={416}
-            height={185}
+            width={192}
+            height={142}
             priority
             className="h-20 w-auto"
           />
