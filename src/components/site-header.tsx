@@ -12,7 +12,7 @@ export function SiteHeader() {
 
   return (
     <header className="relative z-40 border-b border-black/5 bg-white">
-      <Container className="flex items-center justify-between py-5">
+      <Container className="flex items-center justify-between py-4">
         <Link href="/" className="flex-shrink-0">
           <Image
             src="/logo.png"
@@ -20,7 +20,7 @@ export function SiteHeader() {
             width={416}
             height={185}
             priority
-            className="h-14 w-auto"
+            className="h-20 w-auto"
           />
         </Link>
 

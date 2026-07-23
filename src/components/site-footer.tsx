@@ -10,7 +10,7 @@ export function SiteFooter() {
       <Container>
         <div className="mb-10 flex flex-wrap justify-between gap-10">
           <div className="max-w-xs">
-            <Image src="/logo.png" alt="Iconos Group" width={416} height={185} className="h-16 w-auto" />
+            <Image src="/logo.png" alt="Iconos Group" width={416} height={185} className="h-20 w-auto" />
             <p className="mt-3 text-sm text-neutral-500">
               Commercially focused legal support, embedded in your team.
             </p>
