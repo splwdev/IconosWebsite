@@ -73,20 +73,56 @@ select id, email, 'admin' from auth.users where email = 'you@iconos-group.com';
 
 Sign in again — you're in.
 
-### 5. Contact form: Turnstile + Resend
+### 5. Contact form: Turnstile + Microsoft Graph mail
 
-1. **Turnstile**: Cloudflare Dashboard → Turnstile → Add widget → domain
-   `iconos-group.com` (and `localhost` for dev) → copy the **Site Key** into
-   `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and the **Secret Key** into
-   `TURNSTILE_SECRET_KEY`.
-2. **Resend**: create an account, verify the `iconos-group.com` sending
-   domain (SPF/DKIM records — Resend gives you the exact DNS to add), then
-   put an API key into `RESEND_API_KEY`.
-3. Without these set, the app still works in dev — Turnstile shows a visible
-   "not configured" notice instead of blocking the form, and unsent emails
-   are logged to the server console — but **both must be set before
-   production**, or real enquiries will silently not reach
-   legal@iconos-group.com.
+**Turnstile:**
+Cloudflare Dashboard → Turnstile → Add widget → domain `iconos-group.com`
+(and `localhost` for dev) → copy the **Site Key** into
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY` and the **Secret Key** into
+`TURNSTILE_SECRET_KEY`.
+
+**Email — via Microsoft Graph, sent from a dedicated mailbox:**
+
+1. **Create the mailbox.** M365 Admin Center → Teams & groups → Shared
+   mailboxes → New → `enquiries@iconos-group.com`. Shared mailboxes don't
+   need their own paid license under most M365 plans.
+
+2. **Create a dedicated Azure AD app registration** (separate from the SSO
+   one — see step 2 above): Entra ID → App registrations → New
+   registration. Under **API permissions** → Add a permission → Microsoft
+   Graph → **Application permissions** → `Mail.Send` → then **Grant admin
+   consent** (needs a tenant admin; this step doesn't work without it).
+   Under **Certificates & secrets**, create a client secret.
+
+3. **Restrict the app to only this mailbox — do not skip this.** By
+   default, an app-only `Mail.Send` grant lets that app send as *any*
+   mailbox in your entire tenant, not just the one it's meant for. Lock it
+   down with an Exchange Online Application Access Policy (run in
+   [Exchange Online PowerShell](https://learn.microsoft.com/en-us/powershell/exchange/connect-to-exchange-online-powershell)):
+
+   ```powershell
+   New-ApplicationAccessPolicy `
+     -AppId <the app registration's Application (client) ID> `
+     -PolicyScopeGroupId enquiries@iconos-group.com `
+     -AccessRight RestrictAccess `
+     -Description "Contact form mail sender — restricted to enquiries mailbox only"
+
+   # Verify it's actually enforced:
+   Test-ApplicationAccessPolicy -AppId <client-id> -Identity enquiries@iconos-group.com
+   Test-ApplicationAccessPolicy -AppId <client-id> -Identity legal@iconos-group.com
+   ```
+   The second `Test-ApplicationAccessPolicy` call (against a *different*
+   mailbox) should report access denied — if it doesn't, the policy isn't
+   scoping correctly and the app can still send as anyone.
+
+4. Set `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET`,
+   `GRAPH_SENDER_MAILBOX`, and `CONTACT_TO_EMAIL` in `.env.local`.
+
+Without these set, the app still works in dev — Turnstile shows a visible
+"not configured" notice instead of blocking the form, and unsent emails are
+logged to the server console — but all of the above must be done before
+production, or real enquiries will silently not reach
+legal@iconos-group.com.
 
 ## Admin routing note
 

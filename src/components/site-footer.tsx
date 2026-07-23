@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { PRIMARY_NAV, LEGAL_LINKS, isNavGroup } from "@/lib/content/nav";
 import { REGULATORY_STATEMENT } from "@/lib/content/legal-pages";
 import { Container } from "./ui";
@@ -9,10 +10,8 @@ export function SiteFooter() {
       <Container>
         <div className="mb-10 flex flex-wrap justify-between gap-10">
           <div className="max-w-xs">
-            <span className="block text-lg font-semibold tracking-[0.16em] text-brand-dark">
-              ICONOS
-            </span>
-            <p className="mt-2 text-sm text-neutral-500">
+            <Image src="/logo.png" alt="Iconos Group" width={416} height={185} className="h-16 w-auto" />
+            <p className="mt-3 text-sm text-neutral-500">
               Commercially focused legal support, embedded in your team.
             </p>
             <a

@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { sendGraphMail } from "@/lib/graph-mail";
 
 export const contactFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -55,48 +56,28 @@ async function verifyTurnstileToken(token: string): Promise<boolean> {
 }
 
 /**
- * Sends the enquiry via Resend. If RESEND_API_KEY isn't configured, logs a
- * warning and returns false rather than throwing — the submission is still
- * stored in contact_submissions either way, so nothing is silently lost,
- * but production must have this key set for the client to actually receive
- * enquiries.
+ * Sends the enquiry via Microsoft Graph, from the dedicated
+ * enquiries@iconos-group.com mailbox. See src/lib/graph-mail.ts for the
+ * token flow; this just shapes the message content.
  */
 async function sendNotificationEmail(values: ContactFormValues): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
   const toEmail = process.env.CONTACT_TO_EMAIL || "legal@iconos-group.com";
 
-  if (!apiKey) {
-    console.warn(
-      "[contact form] RESEND_API_KEY not set — email not sent. Submission is still stored in contact_submissions."
-    );
-    return false;
-  }
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: "Iconos Group Website <enquiries@iconos-group.com>",
-      to: [toEmail],
-      reply_to: values.email,
-      subject: `New enquiry: ${values.enquiryType} — ${values.company}`,
-      text: [
-        `Name: ${values.name}`,
-        `Company: ${values.company}`,
-        `Email: ${values.email}`,
-        `Phone: ${values.phone}`,
-        `Enquiring about: ${values.enquiryType}`,
-        "",
-        "Message:",
-        values.message,
-      ].join("\n"),
-    }),
+  return sendGraphMail({
+    toEmail,
+    replyToEmail: values.email,
+    subject: `New enquiry: ${values.enquiryType} — ${values.company}`,
+    text: [
+      `Name: ${values.name}`,
+      `Company: ${values.company}`,
+      `Email: ${values.email}`,
+      `Phone: ${values.phone}`,
+      `Enquiring about: ${values.enquiryType}`,
+      "",
+      "Message:",
+      values.message,
+    ].join("\n"),
   });
-
-  return response.ok;
 }
 
 export async function submitContactForm(

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { PRIMARY_NAV, isNavGroup } from "@/lib/content/nav";
@@ -11,19 +12,16 @@ export function SiteHeader() {
 
   return (
     <header className="relative z-40 border-b border-black/5 bg-white">
-      <Container className="flex items-center justify-between py-6">
-        <Link href="/" className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-full border border-brand-dark text-[9px] font-semibold leading-tight tracking-[0.1em]">
-            ICO
-            <br />
-            NOS
-          </span>
-          <span className="leading-tight">
-            <span className="block text-lg font-semibold tracking-[0.16em]">ICONOS</span>
-            <span className="block text-[9px] uppercase tracking-[0.14em] text-neutral-400">
-              Your legal team, tailored
-            </span>
-          </span>
+      <Container className="flex items-center justify-between py-5">
+        <Link href="/" className="flex-shrink-0">
+          <Image
+            src="/logo.png"
+            alt="Iconos Group — Your legal team, tailored"
+            width={416}
+            height={185}
+            priority
+            className="h-14 w-auto"
+          />
         </Link>
 
         {/* Desktop nav */}
