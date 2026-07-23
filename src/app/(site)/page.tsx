@@ -5,7 +5,7 @@ import { TestimonialCard } from "@/components/testimonial-card";
 import { SERVICES } from "@/lib/content/services";
 import { WORK_PROGRAMS } from "@/lib/content/how-we-work";
 import { TESTIMONIALS } from "@/lib/content/testimonials";
-import { BLOG_POSTS } from "@/lib/content/blog-posts";
+import { getPublishedPosts } from "@/lib/blog/posts";
 
 export const metadata: Metadata = {
   title: "Iconos Group | Commercially Focused Legal Support",
@@ -13,9 +13,10 @@ export const metadata: Metadata = {
     "Outsourced in-house counsel for growing UK and international businesses. Fixed monthly fee, embedded in your team.",
 };
 
-export default function HomePage() {
+export default async function HomePage() {
   const managedServices = WORK_PROGRAMS.find((p) => p.slug === "subscription-model")!;
   const vdpo = WORK_PROGRAMS.find((p) => p.slug === "virtual-data-protection-officer")!;
+  const recentPosts = await getPublishedPosts(3);
 
   return (
     <>
@@ -192,26 +193,37 @@ export default function HomePage() {
               Weekly, practical, commercially minded.
             </h2>
           </div>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {BLOG_POSTS.slice(0, 3).map((post) => (
-              <Link
-                key={post.slug}
-                href={`/blog/${post.slug}`}
-                className="overflow-hidden rounded-2xl border border-black/5 bg-white"
-              >
-                <div className="h-36 bg-brand-tint" />
-                <div className="p-6">
-                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-brand-accent">
-                    {post.category}
-                  </p>
-                  <h3 className="mb-2 font-semibold leading-snug text-brand-dark">
-                    {post.title}
-                  </h3>
-                  <p className="text-sm text-neutral-500">{post.excerpt}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
+          {recentPosts.length === 0 ? (
+            <p className="text-sm text-neutral-500">New posts are on the way.</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              {recentPosts.map((post) => (
+                <Link
+                  key={post.slug}
+                  href={`/blog/${post.slug}`}
+                  className="overflow-hidden rounded-2xl border border-black/5 bg-white"
+                >
+                  <div
+                    className="h-36 bg-brand-tint bg-cover bg-center"
+                    style={
+                      post.featured_image_url
+                        ? { backgroundImage: `url(${post.featured_image_url})` }
+                        : undefined
+                    }
+                  />
+                  <div className="p-6">
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-brand-accent">
+                      {post.category}
+                    </p>
+                    <h3 className="mb-2 font-semibold leading-snug text-brand-dark">
+                      {post.title}
+                    </h3>
+                    <p className="text-sm text-neutral-500">{post.excerpt}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </Container>
       </Section>
 

@@ -10,6 +10,7 @@ export default function AdminLayout({
     <div className="min-h-screen bg-neutral-50">
       <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-4">
         <nav className="flex items-center gap-6 text-sm font-medium text-neutral-700">
+          <Link href="/admin/posts">Posts</Link>
           <Link href="/admin/themes">Themes</Link>
           <Link href="/" target="_blank" className="text-neutral-400">
             View live site ↗

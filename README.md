@@ -4,19 +4,19 @@ Next.js 15 + Supabase + Cloudflare Pages rebuild of iconos-group.com.
 
 ## Current status
 
-This is the **theme management slice only** — the app shell, auth, database
-schema, and the "preview → publish" brand-theme feature. It does not yet
-include the full 20-page content site (services, blog, contact form,
-testimonials) — that's next.
-
 What works right now:
 - Sign in to `/admin` with a Microsoft 365 account (Entra ID SSO via Supabase Auth)
-- `/admin/themes` — list, create, duplicate, edit, preview and publish the
-  3 brand concepts from the visual identity deck
-- Preview is private to the signed-in admin (cookie-based); the public
-  homepage only ever shows the currently published theme
-- WCAG AA contrast is enforced before a theme can be published
-- Every publish is logged to `theme_publish_log` (who, when, which theme)
+- `/admin/themes` — brand theme management: preview any theme on the live
+  site privately, publish site-wide, full audit log
+- `/admin/posts` — blog CMS: write in Markdown, upload a featured image,
+  save as draft, publish/unpublish. Public `/blog` and `/blog/[slug]` read
+  only genuinely published posts (enforced by RLS, not just UI hiding)
+- Full public content site: homepage + all pages from the questionnaire's
+  approved sitemap (Who We Are, What We Do ×6, How We Work ×3, Clients,
+  Work With Us, Contact, Blog, 5 legal pages)
+- Contact form UI with validation (not yet wired to email delivery)
+- WCAG AA contrast enforced before a theme can be published
+- Every theme publish is logged (who, when, which theme)
 
 ## Stack
 
@@ -108,16 +108,14 @@ regardless.
 
 ## Outstanding / next up
 
-- Full content site: homepage (from the approved concept), Who We Are, What
-  We Do (6 practice area pages), How We Work (Subscription / VDPO tiers /
-  Ad Hoc), Clients, Work With Us, Blog, Contact
-- Blog CMS (posts table, RLS, staff-authored via `/admin`)
-- Contact form → `legal@iconos-group.com`, with Cloudflare Turnstile
-- Testimonials data model + admin management
+- Contact form backend: Cloudflare Turnstile + email delivery to
+  legal@iconos-group.com (currently validates and logs only)
+- Testimonials data model + admin management (currently a static array)
 - Legal pages (Privacy, Complaints, Cookie, Terms, Disclaimer) — client is
-  reviewing/updating existing wording before reuse
+  reviewing/updating existing wording before reuse; placeholders are live
 - Google Analytics / Cloudflare Analytics wired up (currently broken on the
   live site per the client questionnaire)
 - Cloudflare Pages deployment + GitHub Actions CI/CD
 - Confirm domain registrar / DNS ownership (client to chase via Purple
   Marketing Communications)
+- Client to pick a brand theme concept in `/admin/themes` and publish it
