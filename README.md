@@ -11,6 +11,9 @@ What works right now:
 - `/admin/posts` — blog CMS: write in Markdown, upload a featured image,
   save as draft, publish/unpublish. Public `/blog` and `/blog/[slug]` read
   only genuinely published posts (enforced by RLS, not just UI hiding)
+- Contact form: Cloudflare Turnstile verification, email delivery via
+  Resend, and every submission stored in `contact_submissions` as an audit
+  trail regardless of email outcome
 - Full public content site: homepage + all pages from the questionnaire's
   approved sitemap (Who We Are, What We Do ×6, How We Work ×3, Clients,
   Work With Us, Contact, Blog, 5 legal pages)
@@ -70,6 +73,30 @@ select id, email, 'admin' from auth.users where email = 'you@iconos-group.com';
 
 Sign in again — you're in.
 
+### 5. Contact form: Turnstile + Resend
+
+1. **Turnstile**: Cloudflare Dashboard → Turnstile → Add widget → domain
+   `iconos-group.com` (and `localhost` for dev) → copy the **Site Key** into
+   `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and the **Secret Key** into
+   `TURNSTILE_SECRET_KEY`.
+2. **Resend**: create an account, verify the `iconos-group.com` sending
+   domain (SPF/DKIM records — Resend gives you the exact DNS to add), then
+   put an API key into `RESEND_API_KEY`.
+3. Without these set, the app still works in dev — Turnstile shows a visible
+   "not configured" notice instead of blocking the form, and unsent emails
+   are logged to the server console — but **both must be set before
+   production**, or real enquiries will silently not reach
+   legal@iconos-group.com.
+
+## Admin routing note
+
+`/admin/login` intentionally sits outside the `(protected)` route group
+(`src/app/admin/(protected)/`) so it never inherits the authenticated admin
+nav/chrome. If you add new admin pages, put them inside `(protected)/` —
+and regardless of where you put them, double-check `middleware.ts`'s
+`isAdminRoute` matcher still covers the new route, since that (not the
+layout) is what actually enforces the auth + staff check.
+
 ### 4. Run it
 
 ```bash
@@ -108,8 +135,6 @@ regardless.
 
 ## Outstanding / next up
 
-- Contact form backend: Cloudflare Turnstile + email delivery to
-  legal@iconos-group.com (currently validates and logs only)
 - Testimonials data model + admin management (currently a static array)
 - Legal pages (Privacy, Complaints, Cookie, Terms, Disclaimer) — client is
   reviewing/updating existing wording before reuse; placeholders are live

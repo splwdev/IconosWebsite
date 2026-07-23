@@ -8,6 +8,7 @@ import {
   submitContactForm,
   type ContactFormValues,
 } from "@/app/(site)/contact/actions";
+import { TurnstileWidget } from "./turnstile-widget";
 
 const inputClass =
   "w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm placeholder:text-neutral-400 focus:border-brand-accent focus:outline-none";
@@ -16,14 +17,17 @@ export function ContactForm() {
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [serverErrors, setServerErrors] = useState<string[]>([]);
+  const [turnstileToken, setTurnstileToken] = useState("");
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
+    defaultValues: { turnstileToken: "" },
   });
 
   function onSubmit(values: ContactFormValues) {
@@ -33,6 +37,7 @@ export function ContactForm() {
       if (result.ok) {
         setStatus("success");
         reset();
+        setTurnstileToken("");
       } else {
         setStatus("error");
         setServerErrors(result.errors ?? []);
@@ -136,6 +141,20 @@ export function ContactForm() {
         {errors.message && <p className="mt-1 text-xs text-red-600">{errors.message.message}</p>}
       </div>
 
+      <TurnstileWidget
+        onVerify={(token) => {
+          setTurnstileToken(token);
+          setValue("turnstileToken", token);
+        }}
+        onExpire={() => {
+          setTurnstileToken("");
+          setValue("turnstileToken", "");
+        }}
+      />
+      {errors.turnstileToken && (
+        <p className="text-xs text-red-600">{errors.turnstileToken.message}</p>
+      )}
+
       {status === "error" && serverErrors.length > 0 && (
         <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
           {serverErrors.map((e) => (
@@ -144,11 +163,9 @@ export function ContactForm() {
         </div>
       )}
 
-      {/* Cloudflare Turnstile widget goes here once wired up — see actions.ts TODO */}
-
       <button
         type="submit"
-        disabled={isPending}
+        disabled={isPending || !turnstileToken}
         className="w-full rounded-brand bg-brand-dark px-6 py-3.5 text-sm font-semibold text-white disabled:opacity-50 sm:w-auto"
       >
         {isPending ? "Sending…" : "Send enquiry"}

@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { createClient } from "@/lib/supabase/server";
 
 export const contactFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -14,6 +15,7 @@ export const contactFormSchema = z.object({
     "General Enquiry",
   ]),
   message: z.string().min(1, "Please add a short message"),
+  turnstileToken: z.string().min(1, "Please complete the verification challenge"),
 });
 
 export type ContactFormValues = z.infer<typeof contactFormSchema>;
@@ -24,12 +26,79 @@ export interface ContactFormResult {
 }
 
 /**
- * TODO (next task): verify a Cloudflare Turnstile token here, then send via
- * a transactional email provider to legal@iconos-group.com (Q25), and log
- * the submission to a `contact_submissions` table for audit/reference.
- * For now this validates the payload server-side (never trust client-side
- * validation alone) and returns success so the UI/UX can be reviewed.
+ * Verifies a Turnstile token against Cloudflare's siteverify endpoint.
+ * Server-side only — the secret key must never reach the browser.
+ * If TURNSTILE_SECRET_KEY isn't configured (e.g. local dev before Cloudflare
+ * setup), verification is skipped with a console warning rather than
+ * blocking every submission — but this must be set in production.
  */
+async function verifyTurnstileToken(token: string): Promise<boolean> {
+  const secret = process.env.TURNSTILE_SECRET_KEY;
+  if (!secret) {
+    console.warn(
+      "[contact form] TURNSTILE_SECRET_KEY not set — skipping bot verification. Set this before production."
+    );
+    return true;
+  }
+
+  const response = await fetch(
+    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ secret, response: token }),
+    }
+  );
+
+  const result = (await response.json()) as { success: boolean };
+  return result.success;
+}
+
+/**
+ * Sends the enquiry via Resend. If RESEND_API_KEY isn't configured, logs a
+ * warning and returns false rather than throwing — the submission is still
+ * stored in contact_submissions either way, so nothing is silently lost,
+ * but production must have this key set for the client to actually receive
+ * enquiries.
+ */
+async function sendNotificationEmail(values: ContactFormValues): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const toEmail = process.env.CONTACT_TO_EMAIL || "legal@iconos-group.com";
+
+  if (!apiKey) {
+    console.warn(
+      "[contact form] RESEND_API_KEY not set — email not sent. Submission is still stored in contact_submissions."
+    );
+    return false;
+  }
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: "Iconos Group Website <enquiries@iconos-group.com>",
+      to: [toEmail],
+      reply_to: values.email,
+      subject: `New enquiry: ${values.enquiryType} — ${values.company}`,
+      text: [
+        `Name: ${values.name}`,
+        `Company: ${values.company}`,
+        `Email: ${values.email}`,
+        `Phone: ${values.phone}`,
+        `Enquiring about: ${values.enquiryType}`,
+        "",
+        "Message:",
+        values.message,
+      ].join("\n"),
+    }),
+  });
+
+  return response.ok;
+}
+
 export async function submitContactForm(
   values: ContactFormValues
 ): Promise<ContactFormResult> {
@@ -38,8 +107,42 @@ export async function submitContactForm(
     return { ok: false, errors: parsed.error.issues.map((i) => i.message) };
   }
 
-  // eslint-disable-next-line no-console
-  console.log("[contact form submission — not yet wired to email]", parsed.data);
+  const turnstileOk = await verifyTurnstileToken(parsed.data.turnstileToken);
+  if (!turnstileOk) {
+    return {
+      ok: false,
+      errors: ["Verification failed — please try the form again."],
+    };
+  }
+
+  const emailSent = await sendNotificationEmail(parsed.data);
+
+  // Store the submission regardless of email outcome — this is the audit
+  // trail / fallback if Resend has an outage, and lets staff review
+  // enquiries directly in Supabase if needed.
+  const supabase = await createClient();
+  const { error: dbError } = await supabase.from("contact_submissions").insert({
+    name: parsed.data.name,
+    company: parsed.data.company,
+    email: parsed.data.email,
+    phone: parsed.data.phone,
+    enquiry_type: parsed.data.enquiryType,
+    message: parsed.data.message,
+    turnstile_verified: turnstileOk,
+    email_sent: emailSent,
+  });
+
+  if (dbError) {
+    console.error("[contact form] Failed to store submission:", dbError.message);
+    // Don't fail the user-facing request over a storage error if the email
+    // itself went out successfully — they still got through to the client.
+    if (!emailSent) {
+      return {
+        ok: false,
+        errors: ["Something went wrong sending your enquiry. Please email legal@iconos-group.com directly."],
+      };
+    }
+  }
 
   return { ok: true };
 }
