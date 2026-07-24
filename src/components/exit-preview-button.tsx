@@ -1,6 +1,6 @@
 "use client";
 
-import { exitPreview } from "@/app/admin/themes/actions";
+import { exitPreview } from "@/app/admin/(protected)/themes/actions";
 import { useTransition } from "react";
 
 export function ExitPreviewButton() {

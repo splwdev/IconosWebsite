@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { PageHero } from "@/components/page-hero";
 import { Container, Section } from "@/components/ui";
 import { getPublishedPostBySlug } from "@/lib/blog/posts";
@@ -58,14 +56,16 @@ export default async function BlogPostPage({
           )}
 
           {/*
-            remarkGfm adds table/strikethrough/task-list support. Raw HTML
-            in the Markdown source is NOT rendered (react-markdown's default
-            behaviour) — defense in depth even though only staff can author
-            this content.
+            post.body is HTML from the rich text editor, sanitized with
+            DOMPurify at save time (see sanitizePostBody in
+            src/lib/blog/sanitize.ts) — that's the actual security boundary,
+            not this render step. Only reached via getPublishedPostBySlug,
+            which RLS restricts to genuinely published posts.
           */}
-          <div className="prose prose-neutral max-w-none text-[15px] leading-relaxed text-neutral-700">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.body}</ReactMarkdown>
-          </div>
+          <div
+            className="prose prose-neutral max-w-none text-[15px] leading-relaxed text-neutral-700"
+            dangerouslySetInnerHTML={{ __html: post.body }}
+          />
         </Container>
       </Section>
     </>

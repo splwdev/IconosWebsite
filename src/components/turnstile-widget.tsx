@@ -24,9 +24,11 @@ declare global {
 export function TurnstileWidget({
   onVerify,
   onExpire,
+  nonce,
 }: {
   onVerify: (token: string) => void;
   onExpire: () => void;
+  nonce?: string;
 }) {
   const containerId = useId().replace(/:/g, "");
   const widgetIdRef = useRef<string | null>(null);
@@ -60,6 +62,7 @@ export function TurnstileWidget({
       <Script
         src="https://challenges.cloudflare.com/turnstile/v0/api.js"
         strategy="afterInteractive"
+        nonce={nonce}
         onLoad={() => {
           if (window.turnstile && !widgetIdRef.current) {
             widgetIdRef.current = window.turnstile.render(`#${containerId}`, {

@@ -2,12 +2,11 @@
 
 import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Post } from "@/lib/blog/types";
 import { postInputSchema, slugify, type PostInput } from "@/lib/blog/types";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import {
   savePost,
   publishPost,
@@ -29,8 +28,6 @@ export function PostEditorForm({ post }: { post: Post }) {
 
   const [saveMessage, setSaveMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [imageUrl, setImageUrl] = useState(post.featured_image_url);
-  const [showPreview, setShowPreview] = useState(false);
-  const [slugTouched, setSlugTouched] = useState(true); // existing posts: don't auto-slug on title edits
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -52,14 +49,12 @@ export function PostEditorForm({ post }: { post: Post }) {
     },
   });
 
-  const bodyValue = watch("body");
   const titleValue = watch("title");
+  const isPublished = post.status === "published";
+  const previewSlug = isPublished ? post.slug : slugify(titleValue || "");
 
   function handleTitleChange(value: string) {
     setValue("title", value);
-    if (!slugTouched) {
-      setValue("slug", slugify(value));
-    }
   }
 
   function onSubmit(values: PostInput) {
@@ -106,16 +101,16 @@ export function PostEditorForm({ post }: { post: Post }) {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-neutral-700">
-            URL slug
-            <span className="ml-2 font-normal text-neutral-400">/blog/{watch("slug")}</span>
-          </label>
-          <input
-            className={inputClass}
-            {...register("slug")}
-            onFocus={() => setSlugTouched(true)}
-          />
-          {errors.slug && <p className="mt-1 text-xs text-red-600">{errors.slug.message}</p>}
+          <label className="mb-1 block text-sm font-medium text-neutral-700">URL</label>
+          <div className="flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm">
+            <span className="text-neutral-400">/blog/</span>
+            <span className="font-medium text-neutral-700">{previewSlug || "…"}</span>
+          </div>
+          <p className="mt-1 text-xs text-neutral-400">
+            {isPublished
+              ? "Locked now that this post is published, so existing links keep working."
+              : "Generated automatically from the title above."}
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -140,30 +135,11 @@ export function PostEditorForm({ post }: { post: Post }) {
         </div>
 
         <div>
-          <div className="mb-1 flex items-center justify-between">
-            <label className="text-sm font-medium text-neutral-700">Body (Markdown)</label>
-            <button
-              type="button"
-              onClick={() => setShowPreview((v) => !v)}
-              className="text-xs font-medium text-neutral-500 underline"
-            >
-              {showPreview ? "Edit" : "Preview"}
-            </button>
-          </div>
-          {showPreview ? (
-            <div className="min-h-[280px] rounded-lg border border-neutral-300 bg-neutral-50 p-4 text-sm leading-relaxed">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {bodyValue || "*Nothing to preview yet.*"}
-              </ReactMarkdown>
-            </div>
-          ) : (
-            <textarea
-              rows={14}
-              className={`${inputClass} font-mono`}
-              {...register("body")}
-              placeholder="Write in Markdown — headings, **bold**, lists, links, etc."
-            />
-          )}
+          <label className="mb-1 block text-sm font-medium text-neutral-700">Post content</label>
+          <RichTextEditor
+            content={post.body}
+            onChange={(html) => setValue("body", html, { shouldValidate: true })}
+          />
           {errors.body && <p className="mt-1 text-xs text-red-600">{errors.body.message}</p>}
         </div>
 

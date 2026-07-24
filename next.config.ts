@@ -1,5 +1,9 @@
 import type { NextConfig } from "next";
 
+// Content-Security-Policy is set dynamically in middleware.ts instead of
+// here, because it needs a fresh nonce per request (to allow Next.js's own
+// inline RSC-streaming <script> tags under a strict policy). These headers
+// are the ones that don't need to vary per request, so they stay static.
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -8,21 +12,6 @@ const securityHeaders = [
   {
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
-  },
-  // Allow-lists Google Fonts (theme system) + Supabase (auth/data) + Cloudflare
-  // Turnstile. Tighten further once final embed/video providers are confirmed.
-  {
-    key: "Content-Security-Policy",
-    value: [
-      "default-src 'self'",
-      "script-src 'self' https://challenges.cloudflare.com",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "font-src 'self' https://fonts.gstatic.com",
-      "img-src 'self' data: https://*.supabase.co",
-      "connect-src 'self' https://*.supabase.co",
-      "frame-src https://challenges.cloudflare.com",
-      "frame-ancestors 'none'",
-    ].join("; "),
   },
 ];
 

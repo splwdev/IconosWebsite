@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import typography from "@tailwindcss/typography";
 
 // Colours and fonts are NOT hardcoded here. They resolve to CSS variables
 // that src/lib/theme writes onto <html> at request time, based on whichever
@@ -28,7 +29,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [require("@tailwindcss/typography")],
+  plugins: [typography],
 };
 
 export default config;

@@ -13,7 +13,7 @@ import { TurnstileWidget } from "./turnstile-widget";
 const inputClass =
   "w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm placeholder:text-neutral-400 focus:border-brand-accent focus:outline-none";
 
-export function ContactForm() {
+export function ContactForm({ nonce }: { nonce?: string }) {
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [serverErrors, setServerErrors] = useState<string[]>([]);
@@ -142,6 +142,7 @@ export function ContactForm() {
       </div>
 
       <TurnstileWidget
+        nonce={nonce}
         onVerify={(token) => {
           setTurnstileToken(token);
           setValue("turnstileToken", token);

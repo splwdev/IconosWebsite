@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { postInputSchema, slugify, type PostInput } from "@/lib/blog/types";
+import { sanitizePostBody } from "@/lib/blog/sanitize";
+import { generateUniqueSlug } from "@/lib/slug-utils";
 
 export interface SavePostResult {
   ok: boolean;
@@ -48,18 +50,33 @@ export async function savePost(postId: string, values: PostInput): Promise<SaveP
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
+
+  // Never trust the client on publish status — it gates whether the slug
+  // is allowed to change. Changing a published post's URL silently breaks
+  // any links already shared and any SEO already earned on that URL.
+  const { data: current } = await supabase
     .from("posts")
-    .update({
-      title: parsed.data.title,
-      slug: parsed.data.slug,
-      excerpt: parsed.data.excerpt,
-      body: parsed.data.body,
-      category: parsed.data.category,
-      meta_description: parsed.data.meta_description || null,
-      featured_image_url: parsed.data.featured_image_url ?? null,
-    })
-    .eq("id", postId);
+    .select("status")
+    .eq("id", postId)
+    .single();
+
+  const updatePayload: Record<string, unknown> = {
+    title: parsed.data.title,
+    excerpt: parsed.data.excerpt,
+    body: sanitizePostBody(parsed.data.body),
+    category: parsed.data.category,
+    meta_description: parsed.data.meta_description || null,
+    featured_image_url: parsed.data.featured_image_url ?? null,
+  };
+
+  // Slug auto-follows the title only while still a draft (with automatic
+  // -2/-3 disambiguation, since the user can no longer type it themselves
+  // to fix a collision). Once published, it's frozen entirely.
+  if (current?.status !== "published") {
+    updatePayload.slug = await generateUniqueSlug(supabase, "posts", parsed.data.title, postId);
+  }
+
+  const { error } = await supabase.from("posts").update(updatePayload).eq("id", postId);
 
   if (error) {
     // Postgres unique_violation on the slug column
