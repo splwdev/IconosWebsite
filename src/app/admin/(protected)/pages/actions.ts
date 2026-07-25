@@ -12,6 +12,8 @@ import {
 } from "@/lib/content/pages";
 import { generateUniquePageSlug } from "@/lib/content/page-slug";
 import { sanitizePostBody } from "@/lib/blog/sanitize";
+import { pageSectionSchema, type PageSection } from "@/lib/content/page-sections";
+import { z } from "zod";
  
 export interface SavePageResult {
   ok: boolean;
@@ -156,6 +158,65 @@ export async function savePage(
     slug: (updatePayload.slug as string | undefined) ?? current.slug,
   });
   revalidatePath(`/admin/pages/${pageId}`);
+ 
+  return { ok: true };
+}
+ 
+const sectionsInputSchema = z.array(pageSectionSchema);
+ 
+export interface SaveSectionsResult {
+  ok: boolean;
+  errors?: string[];
+}
+ 
+/**
+ * Replaces a page's entire section list atomically via the
+ * replace_page_sections RPC (see 0008_add_page_sections_table.sql) —
+ * delete-all-then-insert, so a reorder and a content edit always land
+ * together, never partially. HTML fields (text/image_text bodies) are
+ * sanitized here before the array is serialized and sent — this is the
+ * only place that happens, since sanitization can't run inside Postgres.
+ *
+ * Authorization is entirely inside the RPC itself (is_staff() check,
+ * SECURITY DEFINER) — this action doesn't duplicate that check.
+ */
+export async function saveSections(
+  pageId: string,
+  sections: PageSection[]
+): Promise<SaveSectionsResult> {
+  const parsed = sectionsInputSchema.safeParse(sections);
+  if (!parsed.success) {
+    return { ok: false, errors: parsed.error.issues.map((i) => i.message) };
+  }
+ 
+  const sanitized: PageSection[] = parsed.data.map((section) => {
+    if (section.section_type === "text") {
+      return {
+        section_type: "text",
+        background: section.background,
+        content: { body: sanitizePostBody(section.content.body) },
+      };
+    }
+    if (section.section_type === "image_text") {
+      return {
+        section_type: "image_text",
+        background: section.background,
+        content: { ...section.content, body: sanitizePostBody(section.content.body) },
+      };
+    }
+    return section;
+  });
+ 
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("replace_page_sections", {
+    p_page_id: pageId,
+    p_sections: sanitized,
+  });
+ 
+  if (error) {
+    console.error("[admin/pages] Failed to save sections:", error.message);
+    return { ok: false, errors: [error.message] };
+  }
  
   return { ok: true };
 }

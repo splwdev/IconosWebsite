@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Page } from "@/lib/content/pages";
+import { getPageSections } from "@/lib/content/get-page-sections";
 import { PageEditorForm } from "@/components/admin/page-editor-form";
  
 export default async function AdminPageEditorPage({
@@ -15,5 +16,7 @@ export default async function AdminPageEditorPage({
  
   if (!page) notFound();
  
-  return <PageEditorForm page={page as Page} />;
+  const sections = await getPageSections(id);
+ 
+  return <PageEditorForm page={page as Page} initialSections={sections} />;
 }

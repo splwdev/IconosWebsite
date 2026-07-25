@@ -4,6 +4,8 @@ import Image from "next/image";
 import { PageHero } from "@/components/page-hero";
 import { Container, Section } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
+import { getPageSections } from "@/lib/content/get-page-sections";
+import { PageSectionsRenderer } from "@/components/page-sections-renderer";
 import type { Page } from "@/lib/content/pages";
  
 async function getCustomPage(slug: string): Promise<Page | null> {
@@ -41,6 +43,8 @@ export default async function CustomPage({
   const page = await getCustomPage(slug);
   if (!page) notFound();
  
+  const sections = await getPageSections(page.id);
+ 
   return (
     <>
       <PageHero eyebrow="Iconos Group" title={page.title} intro={page.summary} />
@@ -57,13 +61,7 @@ export default async function CustomPage({
               />
             </div>
           )}
-          {/* page.body is Tiptap HTML, sanitized server-side at save time
-              (see sanitizePostBody in admin/pages/actions.ts) — safe to
-              render directly. */}
-          <div
-            className="prose prose-neutral max-w-none text-[15px] leading-relaxed text-neutral-700"
-            dangerouslySetInnerHTML={{ __html: page.body }}
-          />
+          <PageSectionsRenderer sections={sections} />
         </Container>
       </Section>
     </>

@@ -4,6 +4,8 @@ import Image from "next/image";
 import { PageHero } from "@/components/page-hero";
 import { Container, Section, PrimaryButton } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
+import { getPageSections } from "@/lib/content/get-page-sections";
+import { PageSectionsRenderer } from "@/components/page-sections-renderer";
 import type { Page } from "@/lib/content/pages";
  
 async function getServicePage(slug: string): Promise<Page | null> {
@@ -41,6 +43,8 @@ export default async function ServicePage({
   const service = await getServicePage(slug);
   if (!service) notFound();
  
+  const sections = await getPageSections(service.id);
+ 
   return (
     <>
       <PageHero eyebrow="What we do" title={service.title} intro={service.summary} />
@@ -57,13 +61,7 @@ export default async function ServicePage({
               />
             </div>
           )}
-          {/* service.body is Tiptap HTML, sanitized server-side with
-              DOMPurify at save time (see sanitizePostBody in
-              admin/pages/actions.ts) — safe to render directly. */}
-          <div
-            className="prose prose-neutral max-w-none text-[15px] leading-relaxed text-neutral-700"
-            dangerouslySetInnerHTML={{ __html: service.body }}
-          />
+          <PageSectionsRenderer sections={sections} />
           <div className="mt-10">
             <PrimaryButton href="/contact">
               Talk to us about {service.title.toLowerCase()}

@@ -4,6 +4,8 @@ import Image from "next/image";
 import { PageHero } from "@/components/page-hero";
 import { Container, Section, PrimaryButton } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
+import { getPageSections } from "@/lib/content/get-page-sections";
+import { PageSectionsRenderer } from "@/components/page-sections-renderer";
 import type { Page } from "@/lib/content/pages";
  
 async function getProgramPage(slug: string): Promise<Page | null> {
@@ -41,6 +43,8 @@ export default async function WorkProgramPage({
   const program = await getProgramPage(slug);
   if (!program) notFound();
  
+  const sections = await getPageSections(program.id);
+ 
   return (
     <>
       <PageHero eyebrow={program.tag ?? "How we work"} title={program.title} intro={program.summary} />
@@ -57,24 +61,11 @@ export default async function WorkProgramPage({
               />
             </div>
           )}
-          {/* program.body is Tiptap HTML, sanitized server-side at save
-              time — safe to render directly. */}
-          <div
-            className="prose prose-neutral max-w-none text-[15px] leading-relaxed text-neutral-700"
-            dangerouslySetInnerHTML={{ __html: program.body }}
-          />
- 
-          {program.tiers && program.tiers.length > 0 && (
-            <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-3">
-              {program.tiers.map((tier) => (
-                <div key={tier.name} className="rounded-2xl bg-brand-cream p-6">
-                  <h3 className="mb-2 font-semibold text-brand-dark">{tier.name}</h3>
-                  <p className="text-sm leading-relaxed text-neutral-600">{tier.description}</p>
-                </div>
-              ))}
-            </div>
-          )}
- 
+          {/* Pricing tiers now render as an ordinary section within
+              sections (see PageSectionsRenderer) rather than a separate
+              hardcoded block — a program can have zero, one, or several
+              tiers sections, positioned wherever the admin placed them. */}
+          <PageSectionsRenderer sections={sections} />
           <div className="mt-10">
             <PrimaryButton href="/contact">Ask about {program.title.toLowerCase()}</PrimaryButton>
           </div>
