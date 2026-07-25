@@ -2,8 +2,10 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/site-header";
+import { getPublicNavGroups } from "@/lib/content/public-nav";
+import { buildPrimaryNav } from "@/lib/content/nav";
 import { signOut } from "../actions";
-
+ 
 export default async function AdminLayout({
   children,
 }: {
@@ -13,15 +15,18 @@ export default async function AdminLayout({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
+ 
+  const { whatWeDo, howWeWork, customLinks } = await getPublicNavGroups();
+  const nav = buildPrimaryNav(whatWeDo, howWeWork, customLinks);
+ 
   return (
     <div className="min-h-screen bg-neutral-50">
       {/* Real public site header — deliberate choice: staff can jump straight
           to any live page from inside admin. Most nav items aren't editable
-          yet (only Posts/Themes have real editors so far), so this is
+          yet (only Posts/Themes/Pages have real editors so far), so this is
           "quick look at the live page", not "edit this section". */}
-      <SiteHeader />
-
+      <SiteHeader nav={nav} />
+ 
       <div className="flex items-center justify-between border-b border-neutral-200 bg-neutral-900 px-6 py-2.5 text-sm text-neutral-300">
         <Link
           href="/admin"
@@ -41,7 +46,7 @@ export default async function AdminLayout({
           </form>
         </div>
       </div>
-
+ 
       <div className="mx-auto max-w-5xl px-6 py-10">{children}</div>
     </div>
   );

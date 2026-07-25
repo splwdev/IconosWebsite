@@ -1,5 +1,5 @@
 "use client";
-
+ 
 import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
@@ -7,29 +7,23 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { Post } from "@/lib/blog/types";
 import { postInputSchema, slugify, type PostInput } from "@/lib/blog/types";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
-import {
-  savePost,
-  publishPost,
-  unpublishPost,
-  deletePost,
-  uploadFeaturedImage,
-} from "../actions";
-
+import { savePost, deletePost, uploadFeaturedImage } from "../actions";
+ 
 const CATEGORIES = ["Corporate", "Commercial", "Data Protection", "IP", "Employment", "M&A"];
-
+ 
 const inputClass =
   "w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none";
-
+ 
 export function PostEditorForm({ post }: { post: Post }) {
   const [isSaving, startSaving] = useTransition();
   const [isPublishing, startPublishing] = useTransition();
   const [isUploading, startUploading] = useTransition();
   const [isDeleting, startDeleting] = useTransition();
-
+ 
   const [saveMessage, setSaveMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [imageUrl, setImageUrl] = useState(post.featured_image_url);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+ 
   const {
     register,
     handleSubmit,
@@ -48,16 +42,22 @@ export function PostEditorForm({ post }: { post: Post }) {
       featured_image_url: post.featured_image_url,
     },
   });
-
+ 
   const titleValue = watch("title");
   const isPublished = post.status === "published";
   const previewSlug = isPublished ? post.slug : slugify(titleValue || "");
-
+ 
   function handleTitleChange(value: string) {
     setValue("title", value);
   }
-
-  function onSubmit(values: PostInput) {
+ 
+  // All three actions below run the *current* form values through the
+  // same validated save path — the only difference is what status option
+  // (if any) rides along in the same database update. This is what
+  // prevents Publish from going out with stale or blank content: nothing
+  // is published that wasn't just validated and saved in the same step.
+ 
+  function onSaveDraft(values: PostInput) {
     setSaveMessage(null);
     startSaving(async () => {
       const result = await savePost(post.id, { ...values, featured_image_url: imageUrl });
@@ -68,14 +68,46 @@ export function PostEditorForm({ post }: { post: Post }) {
       );
     });
   }
-
+ 
+  function onPublish(values: PostInput) {
+    setSaveMessage(null);
+    startPublishing(async () => {
+      const result = await savePost(
+        post.id,
+        { ...values, featured_image_url: imageUrl },
+        { status: "published" }
+      );
+      setSaveMessage(
+        result.ok
+          ? { ok: true, text: "Published." }
+          : { ok: false, text: (result.errors ?? ["Something went wrong."]).join(" ") }
+      );
+    });
+  }
+ 
+  function onUnpublish(values: PostInput) {
+    setSaveMessage(null);
+    startPublishing(async () => {
+      const result = await savePost(
+        post.id,
+        { ...values, featured_image_url: imageUrl },
+        { status: "draft" }
+      );
+      setSaveMessage(
+        result.ok
+          ? { ok: true, text: "Unpublished." }
+          : { ok: false, text: (result.errors ?? ["Something went wrong."]).join(" ") }
+      );
+    });
+  }
+ 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-
+ 
     const formData = new FormData();
     formData.append("file", file);
-
+ 
     startUploading(async () => {
       const result = await uploadFeaturedImage(formData);
       if (result.ok && result.url) {
@@ -86,10 +118,10 @@ export function PostEditorForm({ post }: { post: Post }) {
       }
     });
   }
-
+ 
   return (
     <div className="grid grid-cols-1 gap-10 lg:grid-cols-[2fr_1fr]">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSaveDraft)} className="space-y-6">
         <div>
           <label className="mb-1 block text-sm font-medium text-neutral-700">Title</label>
           <input
@@ -99,7 +131,7 @@ export function PostEditorForm({ post }: { post: Post }) {
           />
           {errors.title && <p className="mt-1 text-xs text-red-600">{errors.title.message}</p>}
         </div>
-
+ 
         <div>
           <label className="mb-1 block text-sm font-medium text-neutral-700">URL</label>
           <div className="flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm">
@@ -112,7 +144,7 @@ export function PostEditorForm({ post }: { post: Post }) {
               : "Generated automatically from the title above."}
           </p>
         </div>
-
+ 
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-neutral-700">Category</label>
@@ -125,7 +157,7 @@ export function PostEditorForm({ post }: { post: Post }) {
             </select>
           </div>
         </div>
-
+ 
         <div>
           <label className="mb-1 block text-sm font-medium text-neutral-700">
             Excerpt <span className="font-normal text-neutral-400">(shown on the blog index)</span>
@@ -133,7 +165,7 @@ export function PostEditorForm({ post }: { post: Post }) {
           <textarea rows={2} className={inputClass} {...register("excerpt")} />
           {errors.excerpt && <p className="mt-1 text-xs text-red-600">{errors.excerpt.message}</p>}
         </div>
-
+ 
         <div>
           <label className="mb-1 block text-sm font-medium text-neutral-700">Post content</label>
           <RichTextEditor
@@ -142,7 +174,7 @@ export function PostEditorForm({ post }: { post: Post }) {
           />
           {errors.body && <p className="mt-1 text-xs text-red-600">{errors.body.message}</p>}
         </div>
-
+ 
         <div>
           <label className="mb-1 block text-sm font-medium text-neutral-700">
             Meta description <span className="font-normal text-neutral-400">(SEO, optional)</span>
@@ -152,13 +184,13 @@ export function PostEditorForm({ post }: { post: Post }) {
             <p className="mt-1 text-xs text-red-600">{errors.meta_description.message}</p>
           )}
         </div>
-
+ 
         {saveMessage && (
           <p className={`text-sm ${saveMessage.ok ? "text-emerald-700" : "text-red-600"}`}>
             {saveMessage.text}
           </p>
         )}
-
+ 
         <div className="flex flex-wrap items-center gap-3 border-t border-neutral-200 pt-6">
           <button
             type="submit"
@@ -167,12 +199,12 @@ export function PostEditorForm({ post }: { post: Post }) {
           >
             {isSaving ? "Saving…" : "Save draft"}
           </button>
-
+ 
           {post.status === "published" ? (
             <button
               type="button"
               disabled={isPublishing}
-              onClick={() => startPublishing(() => unpublishPost(post.id))}
+              onClick={handleSubmit(onUnpublish)}
               className="rounded-lg border border-neutral-300 px-5 py-2.5 text-sm font-medium text-neutral-700 disabled:opacity-50"
             >
               {isPublishing ? "Working…" : "Unpublish"}
@@ -181,13 +213,13 @@ export function PostEditorForm({ post }: { post: Post }) {
             <button
               type="button"
               disabled={isPublishing}
-              onClick={() => startPublishing(() => publishPost(post.id))}
+              onClick={handleSubmit(onPublish)}
               className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50"
             >
               {isPublishing ? "Publishing…" : "Publish"}
             </button>
           )}
-
+ 
           <button
             type="button"
             disabled={isDeleting}
@@ -202,7 +234,7 @@ export function PostEditorForm({ post }: { post: Post }) {
           </button>
         </div>
       </form>
-
+ 
       <div>
         <label className="mb-1 block text-sm font-medium text-neutral-700">Featured image</label>
         {imageUrl ? (

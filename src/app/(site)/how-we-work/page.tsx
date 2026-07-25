@@ -2,15 +2,29 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHero } from "@/components/page-hero";
 import { Container, Section } from "@/components/ui";
-import { WORK_PROGRAMS } from "@/lib/content/how-we-work";
-
+import { createClient } from "@/lib/supabase/server";
+import type { Page } from "@/lib/content/pages";
+ 
 export const metadata: Metadata = {
   title: "How We Work | Iconos Group",
   description:
     "Managed Legal Services, a tiered Virtual Data Protection Officer service, and ad hoc work — one fixed monthly cost, no surprise invoices.",
 };
-
-export default function HowWeWorkPage() {
+ 
+async function getPrograms(): Promise<Page[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("pages")
+    .select("*")
+    .eq("parent_section", "how-we-work")
+    .eq("status", "published")
+    .order("sort_order", { ascending: true });
+  return (data as Page[] | null) ?? [];
+}
+ 
+export default async function HowWeWorkPage() {
+  const programs = await getPrograms();
+ 
   return (
     <>
       <PageHero
@@ -20,7 +34,7 @@ export default function HowWeWorkPage() {
       />
       <Section>
         <Container className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {WORK_PROGRAMS.map((program) => (
+          {programs.map((program) => (
             <Link
               key={program.slug}
               href={`/how-we-work/${program.slug}`}

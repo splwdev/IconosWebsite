@@ -2,15 +2,29 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHero } from "@/components/page-hero";
 import { Container, Section } from "@/components/ui";
-import { SERVICES } from "@/lib/content/services";
-
+import { createClient } from "@/lib/supabase/server";
+import type { Page } from "@/lib/content/pages";
+ 
 export const metadata: Metadata = {
   title: "What We Do | Iconos Group",
   description:
     "Legal support across corporate, commercial, data protection & GDPR, IP, employment, and M&A.",
 };
-
-export default function WhatWeDoPage() {
+ 
+async function getServices(): Promise<Page[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("pages")
+    .select("*")
+    .eq("parent_section", "what-we-do")
+    .eq("status", "published")
+    .order("sort_order", { ascending: true });
+  return (data as Page[] | null) ?? [];
+}
+ 
+export default async function WhatWeDoPage() {
+  const services = await getServices();
+ 
   return (
     <>
       <PageHero
@@ -21,7 +35,7 @@ export default function WhatWeDoPage() {
       <Section>
         <Container>
           <div className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-black/5 bg-black/5 sm:grid-cols-2 lg:grid-cols-3">
-            {SERVICES.map((service, i) => (
+            {services.map((service, i) => (
               <Link
                 key={service.slug}
                 href={`/what-we-do/${service.slug}`}

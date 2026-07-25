@@ -1,10 +1,15 @@
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-
-export default function SiteLayout({ children }: { children: React.ReactNode }) {
+import { getPublicNavGroups } from "@/lib/content/public-nav";
+import { buildPrimaryNav } from "@/lib/content/nav";
+ 
+export default async function SiteLayout({ children }: { children: React.ReactNode }) {
+  const { whatWeDo, howWeWork, customLinks } = await getPublicNavGroups();
+  const nav = buildPrimaryNav(whatWeDo, howWeWork, customLinks);
+ 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader nav={nav} />
       {children}
       <SiteFooter />
     </>

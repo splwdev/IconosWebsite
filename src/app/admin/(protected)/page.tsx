@@ -10,20 +10,30 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { AdminSectionBadge } from "@/components/admin/section-badge";
 import { AdminCard } from "@/components/admin/admin-card";
-
+ 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
-
-  const [{ count: draftCount }, { count: publishedCount }, { data: liveTheme }] =
-    await Promise.all([
-      supabase.from("posts").select("*", { count: "exact", head: true }).eq("status", "draft"),
-      supabase
-        .from("posts")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "published"),
-      supabase.from("themes").select("name").eq("status", "published").maybeSingle(),
-    ]);
-
+ 
+  const [
+    { count: draftCount },
+    { count: publishedCount },
+    { data: liveTheme },
+    { count: pageDraftCount },
+    { count: pagePublishedCount },
+  ] = await Promise.all([
+    supabase.from("posts").select("*", { count: "exact", head: true }).eq("status", "draft"),
+    supabase
+      .from("posts")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "published"),
+    supabase.from("themes").select("name").eq("status", "published").maybeSingle(),
+    supabase.from("pages").select("*", { count: "exact", head: true }).eq("status", "draft"),
+    supabase
+      .from("pages")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "published"),
+  ]);
+ 
   return (
     <div>
       <AdminSectionBadge icon={LayoutDashboard} label="Content Admin" />
@@ -32,7 +42,7 @@ export default async function AdminDashboardPage() {
         Manage the Iconos Group website — blog posts, brand theme, and the
         sections below as they come online.
       </p>
-
+ 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <AdminCard
           icon={FileText}
@@ -50,8 +60,10 @@ export default async function AdminDashboardPage() {
         />
         <AdminCard
           icon={Briefcase}
-          title="Services & How We Work"
-          description="Edit practice area pages and the subscription/VDPO/ad hoc programs."
+          title="Pages"
+          description="Edit practice area pages, How We Work programs, and custom pages."
+          href="/admin/pages"
+          stat={`${pageDraftCount ?? 0} draft${pageDraftCount === 1 ? "" : "s"} · ${pagePublishedCount ?? 0} published`}
         />
         <AdminCard
           icon={MessageSquareQuote}

@@ -2,22 +2,53 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container, Section, Eyebrow, PrimaryButton, SecondaryLink, CircleAccent } from "@/components/ui";
 import { TestimonialCard } from "@/components/testimonial-card";
-import { SERVICES } from "@/lib/content/services";
-import { WORK_PROGRAMS } from "@/lib/content/how-we-work";
 import { TESTIMONIALS } from "@/lib/content/testimonials";
 import { getPublishedPosts } from "@/lib/blog/posts";
-
+import { createClient } from "@/lib/supabase/server";
+import type { Page } from "@/lib/content/pages";
+ 
 export const metadata: Metadata = {
   title: "Iconos Group | Commercially Focused Legal Support",
   description:
     "Outsourced in-house counsel for growing UK and international businesses. Fixed monthly fee, embedded in your team.",
 };
-
+ 
+async function getHomepageContent(): Promise<{ services: Page[]; programs: Page[] }> {
+  const supabase = await createClient();
+  const [{ data: services }, { data: programs }] = await Promise.all([
+    supabase
+      .from("pages")
+      .select("*")
+      .eq("parent_section", "what-we-do")
+      .eq("status", "published")
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("pages")
+      .select("*")
+      .eq("parent_section", "how-we-work")
+      .eq("status", "published"),
+  ]);
+ 
+  return {
+    services: (services as Page[] | null) ?? [],
+    programs: (programs as Page[] | null) ?? [],
+  };
+}
+ 
 export default async function HomePage() {
-  const managedServices = WORK_PROGRAMS.find((p) => p.slug === "subscription-model")!;
-  const vdpo = WORK_PROGRAMS.find((p) => p.slug === "virtual-data-protection-officer")!;
-  const recentPosts = await getPublishedPosts(3);
-
+  const [{ services, programs }, recentPosts] = await Promise.all([
+    getHomepageContent(),
+    getPublishedPosts(3),
+  ]);
+ 
+  // Unlike the old static array (where these two entries always existed by
+  // construction), these are now admin-editable content — either could be
+  // unpublished or deleted. Look up by slug and render the section only if
+  // both are actually found, rather than the old non-null assertion, which
+  // would have crashed the entire homepage if either went missing.
+  const managedServices = programs.find((p) => p.slug === "subscription-model");
+  const vdpo = programs.find((p) => p.slug === "virtual-data-protection-officer");
+ 
   return (
     <>
       {/* Hero */}
@@ -41,7 +72,7 @@ export default async function HomePage() {
           </div>
         </Container>
       </div>
-
+ 
       {/* About */}
       <Section>
         <Container className="grid grid-cols-1 items-center gap-16 md:grid-cols-2">
@@ -69,7 +100,7 @@ export default async function HomePage() {
           </div>
         </Container>
       </Section>
-
+ 
       {/* Services */}
       <Section tint>
         <Container>
@@ -84,7 +115,7 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-black/5 bg-black/5 sm:grid-cols-2 lg:grid-cols-3">
-            {SERVICES.map((service, i) => (
+            {services.map((service, i) => (
               <Link
                 key={service.slug}
                 href={`/what-we-do/${service.slug}`}
@@ -100,51 +131,53 @@ export default async function HomePage() {
           </div>
         </Container>
       </Section>
-
+ 
       {/* How we work */}
-      <Section>
-        <Container>
-          <div className="mb-12 max-w-xl">
-            <Eyebrow>How we work</Eyebrow>
-            <h2 className="text-3xl font-semibold leading-tight text-brand-dark">
-              One fixed monthly cost. No surprise invoices.
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div className="rounded-2xl bg-brand-dark p-9 text-white">
-              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-brand-accent-soft">
-                {managedServices.tag}
-              </p>
-              <h3 className="mb-3 text-xl font-semibold">{managedServices.title}</h3>
-              <p className="mb-6 text-[15px] leading-relaxed text-white/80">
-                {managedServices.summary}
-              </p>
-              <Link
-                href={`/how-we-work/${managedServices.slug}`}
-                className="border-b border-white/60 pb-0.5 text-sm font-semibold"
-              >
-                See the model →
-              </Link>
+      {managedServices && vdpo && (
+        <Section>
+          <Container>
+            <div className="mb-12 max-w-xl">
+              <Eyebrow>How we work</Eyebrow>
+              <h2 className="text-3xl font-semibold leading-tight text-brand-dark">
+                One fixed monthly cost. No surprise invoices.
+              </h2>
             </div>
-            <div className="rounded-2xl border border-black/10 p-9">
-              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-brand-accent">
-                {vdpo.tag}
-              </p>
-              <h3 className="mb-3 text-xl font-semibold text-brand-dark">{vdpo.title}</h3>
-              <p className="mb-6 text-[15px] leading-relaxed text-neutral-600">
-                {vdpo.summary}
-              </p>
-              <Link
-                href={`/how-we-work/${vdpo.slug}`}
-                className="border-b border-brand-dark pb-0.5 text-sm font-semibold text-brand-dark"
-              >
-                Compare tiers →
-              </Link>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="rounded-2xl bg-brand-dark p-9 text-white">
+                <p className="mb-3 text-xs font-bold uppercase tracking-widest text-brand-accent-soft">
+                  {managedServices.tag}
+                </p>
+                <h3 className="mb-3 text-xl font-semibold">{managedServices.title}</h3>
+                <p className="mb-6 text-[15px] leading-relaxed text-white/80">
+                  {managedServices.summary}
+                </p>
+                <Link
+                  href={`/how-we-work/${managedServices.slug}`}
+                  className="border-b border-white/60 pb-0.5 text-sm font-semibold"
+                >
+                  See the model →
+                </Link>
+              </div>
+              <div className="rounded-2xl border border-black/10 p-9">
+                <p className="mb-3 text-xs font-bold uppercase tracking-widest text-brand-accent">
+                  {vdpo.tag}
+                </p>
+                <h3 className="mb-3 text-xl font-semibold text-brand-dark">{vdpo.title}</h3>
+                <p className="mb-6 text-[15px] leading-relaxed text-neutral-600">
+                  {vdpo.summary}
+                </p>
+                <Link
+                  href={`/how-we-work/${vdpo.slug}`}
+                  className="border-b border-brand-dark pb-0.5 text-sm font-semibold text-brand-dark"
+                >
+                  Compare tiers →
+                </Link>
+              </div>
             </div>
-          </div>
-        </Container>
-      </Section>
-
+          </Container>
+        </Section>
+      )}
+ 
       {/* Founder */}
       <Section tint>
         <Container className="grid grid-cols-1 items-center gap-14 md:grid-cols-[0.85fr_1.15fr]">
@@ -166,7 +199,7 @@ export default async function HomePage() {
           </div>
         </Container>
       </Section>
-
+ 
       {/* Testimonials */}
       <Section>
         <Container>
@@ -183,7 +216,7 @@ export default async function HomePage() {
           </div>
         </Container>
       </Section>
-
+ 
       {/* Blog teaser */}
       <Section tint>
         <Container>
@@ -226,7 +259,7 @@ export default async function HomePage() {
           )}
         </Container>
       </Section>
-
+ 
       {/* Contact CTA */}
       <Section>
         <Container>
