@@ -2,13 +2,14 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Theme } from "@/lib/theme/types";
 import { previewTheme, publishTheme, duplicateTheme, createBlankTheme } from "./actions";
-
+import { DeleteThemeButton } from "@/components/admin/delete-theme-button";
+ 
 const STATUS_STYLES: Record<Theme["status"], string> = {
   published: "bg-emerald-100 text-emerald-700",
   draft: "bg-amber-100 text-amber-700",
   archived: "bg-neutral-200 text-neutral-500",
 };
-
+ 
 export default async function ThemesPage() {
   const supabase = await createClient();
   // RLS ("staff reads all themes") is what actually allows this to see
@@ -18,7 +19,7 @@ export default async function ThemesPage() {
     .select("*")
     .order("status", { ascending: true })
     .order("updated_at", { ascending: false });
-
+ 
   return (
     <div>
       <div className="mb-8 flex items-center justify-between">
@@ -35,7 +36,7 @@ export default async function ThemesPage() {
           </button>
         </form>
       </div>
-
+ 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {(themes as Theme[] | null)?.map((theme) => (
           <div
@@ -54,7 +55,7 @@ export default async function ThemesPage() {
                 title="Accent colour"
               />
             </div>
-
+ 
             <h2 className="font-semibold text-neutral-900">{theme.name}</h2>
             <p className="mt-1 text-xs text-neutral-500">
               {theme.tokens.font_display}
@@ -62,7 +63,7 @@ export default async function ThemesPage() {
             {theme.notes && (
               <p className="mt-2 text-xs text-neutral-400">{theme.notes}</p>
             )}
-
+ 
             <div className="mt-5 flex flex-wrap gap-2 text-sm">
               <Link
                 href={`/admin/themes/${theme.id}`}
@@ -70,25 +71,33 @@ export default async function ThemesPage() {
               >
                 Edit
               </Link>
-
+ 
               <form action={previewTheme.bind(null, theme.id)}>
                 <button className="rounded-lg border border-neutral-300 px-3 py-1.5 font-medium text-neutral-700 hover:bg-neutral-50">
                   Preview
                 </button>
               </form>
-
+ 
               <form action={duplicateTheme.bind(null, theme.id)}>
                 <button className="rounded-lg border border-neutral-300 px-3 py-1.5 font-medium text-neutral-700 hover:bg-neutral-50">
                   Duplicate
                 </button>
               </form>
-
+ 
               {theme.status !== "published" && (
-                <form action={publishTheme.bind(null, theme.id)}>
-                  <button className="rounded-lg bg-emerald-600 px-3 py-1.5 font-medium text-white hover:bg-emerald-700">
-                    Publish
-                  </button>
-                </form>
+                <>
+                  <form action={publishTheme.bind(null, theme.id)}>
+                    <button className="rounded-lg bg-emerald-600 px-3 py-1.5 font-medium text-white hover:bg-emerald-700">
+                      Publish
+                    </button>
+                  </form>
+ 
+                  {/* Same condition as Publish above, deliberately —
+                      mirrors the RLS constraint that only non-published
+                      themes can be deleted, so the button is never offered
+                      for a theme the database would reject anyway. */}
+                  <DeleteThemeButton themeId={theme.id} themeName={theme.name} />
+                </>
               )}
             </div>
           </div>

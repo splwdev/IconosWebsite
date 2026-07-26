@@ -1,5 +1,5 @@
 "use server";
-
+ 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PREVIEW_COOKIE } from "@/lib/theme/get-active-theme";
 import { themeTokensSchema } from "@/lib/theme/types";
 import { checkThemeContrast } from "@/lib/theme/contrast";
-
+ 
 /**
  * Sets a private, staff-only preview cookie so the requesting browser (and
  * only that browser) renders `themeId` on every page, including the real
@@ -25,13 +25,13 @@ export async function previewTheme(themeId: string) {
   });
   redirect("/");
 }
-
+ 
 export async function exitPreview() {
   const cookieStore = await cookies();
   cookieStore.delete(PREVIEW_COOKIE);
   redirect("/");
 }
-
+ 
 /**
  * Publishes a theme site-wide via the publish_theme() RPC (security definer
  * — see 0001_theme_management.sql), which atomically archives whatever was
@@ -42,7 +42,7 @@ export async function exitPreview() {
  */
 export async function publishTheme(themeId: string) {
   const supabase = await createClient();
-
+ 
   // Defense in depth: the editor UI already blocks publishing a
   // contrast-failing theme, but re-check here since this action can be
   // invoked directly (e.g. the themes list "Publish" button skips the
@@ -52,34 +52,34 @@ export async function publishTheme(themeId: string) {
     .select("tokens")
     .eq("id", themeId)
     .single();
-
+ 
   if (fetchError || !theme) {
     throw new Error("Could not find theme to publish");
   }
-
+ 
   const parsed = themeTokensSchema.safeParse(theme.tokens);
   if (!parsed.success) {
     throw new Error("Theme has invalid token data and cannot be published");
   }
-
+ 
   const contrastCheck = checkThemeContrast(parsed.data);
   if (!contrastCheck.passes) {
     throw new Error(`Cannot publish: ${contrastCheck.failures.join("; ")}`);
   }
-
+ 
   const { error } = await supabase.rpc("publish_theme", { target_id: themeId });
-
+ 
   if (error) {
     throw new Error(`Failed to publish theme: ${error.message}`);
   }
-
+ 
   const cookieStore = await cookies();
   cookieStore.delete(PREVIEW_COOKIE);
-
+ 
   revalidatePath("/", "layout");
   revalidatePath("/admin/themes");
 }
-
+ 
 export async function duplicateTheme(themeId: string) {
   const supabase = await createClient();
   const { data: original, error: fetchError } = await supabase
@@ -87,14 +87,14 @@ export async function duplicateTheme(themeId: string) {
     .select("name, tokens, notes")
     .eq("id", themeId)
     .single();
-
+ 
   if (fetchError || !original) {
     throw new Error("Could not find theme to duplicate");
   }
-
+ 
   const baseSlug = `${original.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-copy`;
   const slug = `${baseSlug}-${Date.now().toString(36)}`;
-
+ 
   const { error: insertError } = await supabase.from("themes").insert({
     name: `${original.name} (copy)`,
     slug,
@@ -102,18 +102,18 @@ export async function duplicateTheme(themeId: string) {
     tokens: original.tokens,
     notes: original.notes,
   });
-
+ 
   if (insertError) {
     throw new Error(`Failed to duplicate theme: ${insertError.message}`);
   }
-
+ 
   revalidatePath("/admin/themes");
 }
-
+ 
 export async function createBlankTheme() {
   const supabase = await createClient();
   const slug = `untitled-${Date.now().toString(36)}`;
-
+ 
   const { data, error } = await supabase
     .from("themes")
     .insert({
@@ -137,20 +137,49 @@ export async function createBlankTheme() {
     })
     .select("id")
     .single();
-
+ 
   if (error || !data) {
     throw new Error(`Failed to create theme: ${error?.message}`);
   }
-
+ 
   revalidatePath("/admin/themes");
   redirect(`/admin/themes/${data.id}`);
 }
-
+ 
+/**
+ * RLS ("staff deletes non-published themes") already blocks deleting a
+ * published theme at the database level — this check exists purely to
+ * surface a clear error message instead of a silent no-op, in case this
+ * action is ever reached for one (the UI already hides the delete button
+ * for published themes, same as the Publish button's own conditional).
+ */
+export async function deleteTheme(themeId: string) {
+  const supabase = await createClient();
+ 
+  const { data: theme } = await supabase
+    .from("themes")
+    .select("status")
+    .eq("id", themeId)
+    .single();
+ 
+  if (theme?.status === "published") {
+    throw new Error("Cannot delete the published theme. Publish a different theme first.");
+  }
+ 
+  const { error } = await supabase.from("themes").delete().eq("id", themeId);
+ 
+  if (error) {
+    throw new Error(`Failed to delete theme: ${error.message}`);
+  }
+ 
+  revalidatePath("/admin/themes");
+}
+ 
 export interface SaveThemeResult {
   ok: boolean;
   errors?: string[];
 }
-
+ 
 /**
  * Saves edits to a draft theme. Validates token shape with Zod (rejects
  * anything outside the allow-listed fonts / hex-colour format) and blocks
@@ -167,12 +196,12 @@ export async function saveTheme(
   } catch {
     return { ok: false, errors: ["Invalid theme token data."] };
   }
-
+ 
   const contrastCheck = checkThemeContrast(parsedTokens);
   if (!contrastCheck.passes) {
     return { ok: false, errors: contrastCheck.failures };
   }
-
+ 
   const supabase = await createClient();
   const { error } = await supabase
     .from("themes")
@@ -183,11 +212,11 @@ export async function saveTheme(
     })
     .eq("id", themeId)
     .eq("status", "draft"); // RLS already blocks editing published rows; belt & braces
-
+ 
   if (error) {
     return { ok: false, errors: [error.message] };
   }
-
+ 
   revalidatePath("/admin/themes");
   revalidatePath(`/admin/themes/${themeId}`);
   return { ok: true };
