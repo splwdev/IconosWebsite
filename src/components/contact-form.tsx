@@ -1,24 +1,21 @@
 "use client";
-
+ 
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  contactFormSchema,
-  submitContactForm,
-  type ContactFormValues,
-} from "@/app/(site)/contact/actions";
+import { submitContactForm } from "@/app/(site)/contact/actions";
+import { contactFormSchema, type ContactFormValues } from "@/app/(site)/contact/schema";
 import { TurnstileWidget } from "./turnstile-widget";
-
+ 
 const inputClass =
   "w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm placeholder:text-neutral-400 focus:border-brand-accent focus:outline-none";
-
+ 
 export function ContactForm({ nonce }: { nonce?: string }) {
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [serverErrors, setServerErrors] = useState<string[]>([]);
   const [turnstileToken, setTurnstileToken] = useState("");
-
+ 
   const {
     register,
     handleSubmit,
@@ -29,7 +26,7 @@ export function ContactForm({ nonce }: { nonce?: string }) {
     resolver: zodResolver(contactFormSchema),
     defaultValues: { turnstileToken: "" },
   });
-
+ 
   function onSubmit(values: ContactFormValues) {
     setStatus("idle");
     startTransition(async () => {
@@ -44,7 +41,7 @@ export function ContactForm({ nonce }: { nonce?: string }) {
       }
     });
   }
-
+ 
   if (status === "success") {
     return (
       <div
@@ -56,7 +53,7 @@ export function ContactForm({ nonce }: { nonce?: string }) {
       </div>
     );
   }
-
+ 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -108,7 +105,7 @@ export function ContactForm({ nonce }: { nonce?: string }) {
           {errors.phone && <p className="mt-1 text-xs text-red-600">{errors.phone.message}</p>}
         </div>
       </div>
-
+ 
       <div>
         <label htmlFor="enquiryType" className="sr-only">
           What are you enquiring about?
@@ -126,7 +123,7 @@ export function ContactForm({ nonce }: { nonce?: string }) {
           <p className="mt-1 text-xs text-red-600">Please select an option</p>
         )}
       </div>
-
+ 
       <div>
         <label htmlFor="message" className="sr-only">
           Message
@@ -140,7 +137,7 @@ export function ContactForm({ nonce }: { nonce?: string }) {
         />
         {errors.message && <p className="mt-1 text-xs text-red-600">{errors.message.message}</p>}
       </div>
-
+ 
       <TurnstileWidget
         nonce={nonce}
         onVerify={(token) => {
@@ -155,7 +152,7 @@ export function ContactForm({ nonce }: { nonce?: string }) {
       {errors.turnstileToken && (
         <p className="text-xs text-red-600">{errors.turnstileToken.message}</p>
       )}
-
+ 
       {status === "error" && serverErrors.length > 0 && (
         <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
           {serverErrors.map((e) => (
@@ -163,7 +160,7 @@ export function ContactForm({ nonce }: { nonce?: string }) {
           ))}
         </div>
       )}
-
+ 
       <button
         type="submit"
         disabled={isPending || !turnstileToken}
