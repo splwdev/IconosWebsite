@@ -36,7 +36,9 @@ import {
   type ImageTextSectionContent,
   type CtaSectionContent,
   type TiersSectionContent,
+  type VideoSectionContent,
 } from "@/lib/content/page-sections";
+import { isValidYouTubeUrl } from "@/lib/content/youtube";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import {
   savePage,
@@ -252,6 +254,45 @@ function TiersSectionFields({
   );
 }
  
+function VideoSectionFields({
+  content,
+  onChange,
+}: {
+  content: VideoSectionContent;
+  onChange: (content: VideoSectionContent) => void;
+}) {
+  const showError = content.url.length > 0 && !isValidYouTubeUrl(content.url);
+ 
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="mb-1 block text-xs font-medium text-neutral-600">YouTube URL</label>
+        <input
+          className={inputClass}
+          placeholder="https://www.youtube.com/watch?v=..."
+          value={content.url}
+          onChange={(e) => onChange({ ...content, url: e.target.value })}
+        />
+        {showError && (
+          <p className="mt-1 text-xs text-red-600">
+            Doesn&apos;t look like a valid YouTube URL — check it and try again.
+          </p>
+        )}
+      </div>
+      <div>
+        <label className="mb-1 block text-xs font-medium text-neutral-600">
+          Caption <span className="font-normal text-neutral-400">(optional)</span>
+        </label>
+        <input
+          className={inputClass}
+          value={content.caption}
+          onChange={(e) => onChange({ ...content, caption: e.target.value })}
+        />
+      </div>
+    </div>
+  );
+}
+ 
 // ---------------------------------------------------------------------------
 // Sortable card wrapper
 // ---------------------------------------------------------------------------
@@ -371,6 +412,12 @@ function SectionCard({
       )}
       {section.section_type === "tiers" && (
         <TiersSectionFields
+          content={section.content}
+          onChange={(content) => onChange({ ...section, content } as PageSection)}
+        />
+      )}
+      {section.section_type === "video" && (
+        <VideoSectionFields
           content={section.content}
           onChange={(content) => onChange({ ...section, content } as PageSection)}
         />

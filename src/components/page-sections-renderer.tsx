@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { PageSection } from "@/lib/content/page-sections";
+import { YouTubeEmbed } from "@/components/youtube-embed";
  
 export function PageSectionsRenderer({ sections }: { sections: PageSection[] }) {
   return (
@@ -90,6 +91,16 @@ function PageSectionBlock({ section }: { section: PageSection }) {
               <p className="text-sm leading-relaxed text-neutral-600">{tier.description}</p>
             </div>
           ))}
+        </div>
+      );
+    }
+ 
+    case "video": {
+      const { url, caption } = section.content;
+      return (
+        <div>
+          <YouTubeEmbed url={url} title={caption || undefined} />
+          {caption && <p className="mt-3 text-center text-sm text-neutral-500">{caption}</p>}
         </div>
       );
     }
