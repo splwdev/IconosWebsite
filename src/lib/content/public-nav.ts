@@ -69,6 +69,21 @@ export async function getPublicNavGroups(): Promise<PublicNavGroups> {
       customLinks: customRows.map((r) => ({ label: r.title, href: `/${r.slug}` })),
     };
   } catch (err) {
+    // Next.js's build-time static/dynamic probing throws a special
+    // DYNAMIC_SERVER_USAGE signal when a route calls cookies() — this is
+    // expected control flow (it's how Next decides a route must be
+    // dynamic), not a real error, and must be allowed to propagate rather
+    // than being swallowed here. Only genuine failures (a real Supabase
+    // outage, network error, etc.) should hit the fail-soft fallback below.
+    if (
+      err &&
+      typeof err === "object" &&
+      "digest" in err &&
+      typeof (err as { digest?: unknown }).digest === "string" &&
+      (err as { digest: string }).digest.startsWith("DYNAMIC_SERVER_USAGE")
+    ) {
+      throw err;
+    }
     console.error("[nav] Unexpected error loading nav pages:", err);
     return { whatWeDo: [], howWeWork: [], customLinks: [] };
   }

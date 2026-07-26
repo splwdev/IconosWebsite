@@ -13,6 +13,13 @@ build/
 .env.local
 .env.*.local
 
+# cloudflare / opennext build output — regenerated on every build/preview/deploy
+.open-next/
+.wrangler/
+
+# typescript incremental build cache — churns every compile, no value in git
+tsconfig.tsbuildinfo
+
 # misc
 .DS_Store
 *.pem

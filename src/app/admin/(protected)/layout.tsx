@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/site-header";
@@ -15,6 +16,27 @@ export default async function AdminLayout({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+ 
+  // Defense in depth — mirrors updateSession() in middleware.ts exactly.
+  // Deliberately NOT relying on middleware alone to gate this: Next.js's
+  // own guidance is that middleware should not be the only line of
+  // defense, and it's been directly confirmed on this deployment target
+  // that middleware can silently fail to execute at all while every
+  // Server Component still runs correctly — this layout is that backstop,
+  // redundant with middleware, not instead of it.
+  if (!user) {
+    redirect("/admin/login");
+  }
+ 
+  const { data: staffRow } = await supabase
+    .from("staff_users")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+ 
+  if (!staffRow) {
+    redirect("/admin/login?error=not_authorized");
+  }
  
   const { whatWeDo, howWeWork, customLinks } = await getPublicNavGroups();
   const nav = buildPrimaryNav(whatWeDo, howWeWork, customLinks);
