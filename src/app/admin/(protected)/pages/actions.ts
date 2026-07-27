@@ -173,7 +173,7 @@ export interface SaveSectionsResult {
  * Replaces a page's entire section list atomically via the
  * replace_page_sections RPC (see 0008_add_page_sections_table.sql) —
  * delete-all-then-insert, so a reorder and a content edit always land
- * together, never partially. HTML fields (text/image_text bodies) are
+ * together, never partially. HTML fields (text/media_text bodies) are
  * sanitized here before the array is serialized and sent — this is the
  * only place that happens, since sanitization can't run inside Postgres.
  *
@@ -197,9 +197,9 @@ export async function saveSections(
         content: { body: sanitizePostBody(section.content.body) },
       };
     }
-    if (section.section_type === "image_text") {
+    if (section.section_type === "media_text") {
       return {
-        section_type: "image_text",
+        section_type: "media_text",
         background: section.background,
         content: { ...section.content, body: sanitizePostBody(section.content.body) },
       };

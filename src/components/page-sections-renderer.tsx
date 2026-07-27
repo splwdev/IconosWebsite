@@ -1,7 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { PageSection } from "@/lib/content/page-sections";
+import type { PageSection, MediaSize } from "@/lib/content/page-sections";
 import { YouTubeEmbed } from "@/components/youtube-embed";
+ 
+const MEDIA_SIZE_CLASS: Record<MediaSize, string> = {
+  small: "w-1/3",
+  medium: "w-2/3",
+  large: "w-full",
+};
  
 export function PageSectionsRenderer({ sections }: { sections: PageSection[] }) {
   return (
@@ -34,13 +40,33 @@ function PageSectionBlock({ section }: { section: PageSection }) {
         />
       );
  
-    case "image_text": {
-      const { image_url, body, layout } = section.content;
-      const imageFirst = layout !== "image-right";
+    case "media": {
+      const { media_type, image_url, video_url, size, caption } = section.content;
+      return (
+        <div>
+          <div className={`mx-auto ${MEDIA_SIZE_CLASS[size]}`}>
+            {media_type === "video" ? (
+              <YouTubeEmbed url={video_url} title={caption || undefined} />
+            ) : image_url ? (
+              <div className="relative aspect-video w-full overflow-hidden rounded-2xl">
+                <Image src={image_url} alt="" fill unoptimized className="object-cover" />
+              </div>
+            ) : null}
+          </div>
+          {caption && <p className="mt-3 text-center text-sm text-neutral-500">{caption}</p>}
+        </div>
+      );
+    }
+ 
+    case "media_text": {
+      const { media_type, image_url, video_url, body, layout } = section.content;
+      const mediaFirst = layout !== "media-right";
       return (
         <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-2">
-          <div className={imageFirst ? "md:order-1" : "md:order-2"}>
-            {image_url ? (
+          <div className={mediaFirst ? "md:order-1" : "md:order-2"}>
+            {media_type === "video" ? (
+              <YouTubeEmbed url={video_url} />
+            ) : image_url ? (
               <div className="relative aspect-video w-full overflow-hidden rounded-2xl">
                 <Image src={image_url} alt="" fill unoptimized className="object-cover" />
               </div>
@@ -50,7 +76,7 @@ function PageSectionBlock({ section }: { section: PageSection }) {
           </div>
           <div
             className={`prose prose-neutral max-w-none text-[15px] leading-relaxed text-neutral-700 ${
-              imageFirst ? "md:order-2" : "md:order-1"
+              mediaFirst ? "md:order-2" : "md:order-1"
             }`}
             dangerouslySetInnerHTML={{ __html: body }}
           />
@@ -91,16 +117,6 @@ function PageSectionBlock({ section }: { section: PageSection }) {
               <p className="text-sm leading-relaxed text-neutral-600">{tier.description}</p>
             </div>
           ))}
-        </div>
-      );
-    }
- 
-    case "video": {
-      const { url, caption } = section.content;
-      return (
-        <div>
-          <YouTubeEmbed url={url} title={caption || undefined} />
-          {caption && <p className="mt-3 text-center text-sm text-neutral-500">{caption}</p>}
         </div>
       );
     }

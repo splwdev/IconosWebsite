@@ -2,19 +2,25 @@ import { z } from "zod";
 import { tierSchema } from "./pages";
 import { isValidYouTubeUrl } from "./youtube";
  
-export const SECTION_TYPES = ["text", "image_text", "cta", "tiers", "video"] as const;
+export const SECTION_TYPES = ["text", "media", "media_text", "cta", "tiers"] as const;
 export type SectionType = (typeof SECTION_TYPES)[number];
  
 export const SECTION_TYPE_LABELS: Record<SectionType, string> = {
   text: "Text",
-  image_text: "Image + Text",
+  media: "Media",
+  media_text: "Media + Text",
   cta: "Call to Action",
   tiers: "Pricing Tiers",
-  video: "Video",
 };
  
-export const IMAGE_TEXT_LAYOUTS = ["image-left", "image-right"] as const;
-export type ImageTextLayout = (typeof IMAGE_TEXT_LAYOUTS)[number];
+export const MEDIA_TYPES = ["image", "video"] as const;
+export type MediaType = (typeof MEDIA_TYPES)[number];
+ 
+export const MEDIA_SIZES = ["small", "medium", "large"] as const;
+export type MediaSize = (typeof MEDIA_SIZES)[number];
+ 
+export const MEDIA_LAYOUTS = ["media-left", "media-right"] as const;
+export type MediaLayout = (typeof MEDIA_LAYOUTS)[number];
  
 export const SECTION_BACKGROUNDS = ["none", "tint"] as const;
 export type SectionBackground = (typeof SECTION_BACKGROUNDS)[number];
@@ -24,12 +30,54 @@ export const textSectionContentSchema = z.object({
 });
 export type TextSectionContent = z.infer<typeof textSectionContentSchema>;
  
-export const imageTextSectionContentSchema = z.object({
-  image_url: z.string().nullable(),
-  body: z.string(),
-  layout: z.enum(IMAGE_TEXT_LAYOUTS),
-});
-export type ImageTextSectionContent = z.infer<typeof imageTextSectionContentSchema>;
+/**
+ * Shared cross-field check used by both media section types: a video needs
+ * a genuinely parseable YouTube URL, an image needs an uploaded image_url.
+ * Kept as a plain function (not a shared base schema) since ZodEffects
+ * objects don't compose cleanly via .extend()/.shape — duplicating the
+ * check inline in each schema's superRefine is simpler than fighting that.
+ */
+function checkMediaFields(
+  data: { media_type: MediaType; image_url: string | null; video_url: string },
+  ctx: z.RefinementCtx
+) {
+  if (data.media_type === "video" && !isValidYouTubeUrl(data.video_url)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["video_url"],
+      message: "Enter a valid YouTube URL",
+    });
+  }
+  if (data.media_type === "image" && !data.image_url) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["image_url"],
+      message: "Upload an image",
+    });
+  }
+}
+ 
+export const mediaSectionContentSchema = z
+  .object({
+    media_type: z.enum(MEDIA_TYPES),
+    image_url: z.string().nullable(),
+    video_url: z.string(),
+    size: z.enum(MEDIA_SIZES),
+    caption: z.string(),
+  })
+  .superRefine(checkMediaFields);
+export type MediaSectionContent = z.infer<typeof mediaSectionContentSchema>;
+ 
+export const mediaTextSectionContentSchema = z
+  .object({
+    media_type: z.enum(MEDIA_TYPES),
+    image_url: z.string().nullable(),
+    video_url: z.string(),
+    body: z.string(),
+    layout: z.enum(MEDIA_LAYOUTS),
+  })
+  .superRefine(checkMediaFields);
+export type MediaTextSectionContent = z.infer<typeof mediaTextSectionContentSchema>;
  
 // heading/body/button_label/button_href are plain strings rendered as
 // text, not HTML — no rich-text editor and no sanitization needed here,
@@ -47,15 +95,6 @@ export const tiersSectionContentSchema = z.object({
 });
 export type TiersSectionContent = z.infer<typeof tiersSectionContentSchema>;
  
-export const videoSectionContentSchema = z.object({
-  url: z
-    .string()
-    .min(1, "Required")
-    .refine((v) => isValidYouTubeUrl(v), { message: "Enter a valid YouTube URL" }),
-  caption: z.string(),
-});
-export type VideoSectionContent = z.infer<typeof videoSectionContentSchema>;
- 
 export const pageSectionSchema = z.discriminatedUnion("section_type", [
   z.object({
     section_type: z.literal("text"),
@@ -63,9 +102,14 @@ export const pageSectionSchema = z.discriminatedUnion("section_type", [
     content: textSectionContentSchema,
   }),
   z.object({
-    section_type: z.literal("image_text"),
+    section_type: z.literal("media"),
     background: z.enum(SECTION_BACKGROUNDS),
-    content: imageTextSectionContentSchema,
+    content: mediaSectionContentSchema,
+  }),
+  z.object({
+    section_type: z.literal("media_text"),
+    background: z.enum(SECTION_BACKGROUNDS),
+    content: mediaTextSectionContentSchema,
   }),
   z.object({
     section_type: z.literal("cta"),
@@ -77,11 +121,6 @@ export const pageSectionSchema = z.discriminatedUnion("section_type", [
     background: z.enum(SECTION_BACKGROUNDS),
     content: tiersSectionContentSchema,
   }),
-  z.object({
-    section_type: z.literal("video"),
-    background: z.enum(SECTION_BACKGROUNDS),
-    content: videoSectionContentSchema,
-  }),
 ]);
  
 export type PageSection = z.infer<typeof pageSectionSchema>;
@@ -90,11 +129,29 @@ export function createBlankSection(type: SectionType): PageSection {
   switch (type) {
     case "text":
       return { section_type: "text", background: "none", content: { body: "" } };
-    case "image_text":
+    case "media":
       return {
-        section_type: "image_text",
+        section_type: "media",
         background: "none",
-        content: { image_url: null, body: "", layout: "image-left" },
+        content: {
+          media_type: "image",
+          image_url: null,
+          video_url: "",
+          size: "medium",
+          caption: "",
+        },
+      };
+    case "media_text":
+      return {
+        section_type: "media_text",
+        background: "none",
+        content: {
+          media_type: "image",
+          image_url: null,
+          video_url: "",
+          body: "",
+          layout: "media-left",
+        },
       };
     case "cta":
       return {
@@ -104,7 +161,5 @@ export function createBlankSection(type: SectionType): PageSection {
       };
     case "tiers":
       return { section_type: "tiers", background: "none", content: { tiers: [] } };
-    case "video":
-      return { section_type: "video", background: "none", content: { url: "", caption: "" } };
   }
 }

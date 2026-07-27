@@ -28,15 +28,17 @@ import {
   SECTION_TYPES,
   SECTION_TYPE_LABELS,
   SECTION_BACKGROUNDS,
-  IMAGE_TEXT_LAYOUTS,
+  MEDIA_TYPES,
+  MEDIA_SIZES,
+  MEDIA_LAYOUTS,
   createBlankSection,
   type PageSection,
   type SectionType,
   type TextSectionContent,
-  type ImageTextSectionContent,
+  type MediaSectionContent,
+  type MediaTextSectionContent,
   type CtaSectionContent,
   type TiersSectionContent,
-  type VideoSectionContent,
 } from "@/lib/content/page-sections";
 import { isValidYouTubeUrl } from "@/lib/content/youtube";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
@@ -54,6 +56,12 @@ const TYPE_LABEL: Record<Page["page_type"], string> = {
   service: "Service",
   program: "Program",
   custom: "Custom page",
+};
+ 
+const MEDIA_SIZE_LABEL: Record<(typeof MEDIA_SIZES)[number], string> = {
+  small: "Small",
+  medium: "Medium",
+  large: "Large",
 };
  
 // A stable client-only id purely for React keys / drag-and-drop identity —
@@ -80,22 +88,46 @@ function TextSectionFields({
   return <RichTextEditor content={content.body} onChange={(html) => onChange({ body: html })} />;
 }
  
-function ImageTextSectionFields({
+/**
+ * Shared image/video picker used inside both MediaSectionFields and
+ * MediaTextSectionFields — same media_type toggle, same conditional
+ * image-upload-vs-YouTube-URL input, since both section content shapes
+ * carry the identical media_type/image_url/video_url trio.
+ */
+function MediaPicker<T extends { media_type: "image" | "video"; image_url: string | null; video_url: string }>({
   content,
   onChange,
   uploading,
   onImageFile,
 }: {
-  content: ImageTextSectionContent;
-  onChange: (content: ImageTextSectionContent) => void;
+  content: T;
+  onChange: (content: T) => void;
   uploading: boolean;
   onImageFile: (file: File) => void;
 }) {
+  const showUrlError = content.video_url.length > 0 && !isValidYouTubeUrl(content.video_url);
+ 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div>
+      <div className="mb-2 flex gap-2">
+        {MEDIA_TYPES.map((type) => (
+          <button
+            key={type}
+            type="button"
+            onClick={() => onChange({ ...content, media_type: type })}
+            className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${
+              content.media_type === type
+                ? "border-neutral-900 bg-neutral-900 text-white"
+                : "border-neutral-300 text-neutral-600"
+            }`}
+          >
+            {type === "image" ? "Image" : "Video"}
+          </button>
+        ))}
+      </div>
+ 
+      {content.media_type === "image" ? (
         <div>
-          <label className="mb-1 block text-xs font-medium text-neutral-600">Image</label>
           {content.image_url ? (
             <div className="relative mb-2 aspect-video overflow-hidden rounded-lg border border-neutral-200">
               <Image src={content.image_url} alt="" fill className="object-cover" unoptimized />
@@ -117,12 +149,93 @@ function ImageTextSectionFields({
           />
           {uploading && <p className="mt-1 text-xs text-neutral-500">Uploading…</p>}
         </div>
+      ) : (
         <div>
-          <label className="mb-1 block text-xs font-medium text-neutral-600">
-            Image position
-          </label>
+          <input
+            className={inputClass}
+            placeholder="https://www.youtube.com/watch?v=..."
+            value={content.video_url}
+            onChange={(e) => onChange({ ...content, video_url: e.target.value })}
+          />
+          {showUrlError && (
+            <p className="mt-1 text-xs text-red-600">
+              Doesn&apos;t look like a valid YouTube URL — check it and try again.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+ 
+function MediaSectionFields({
+  content,
+  onChange,
+  uploading,
+  onImageFile,
+}: {
+  content: MediaSectionContent;
+  onChange: (content: MediaSectionContent) => void;
+  uploading: boolean;
+  onImageFile: (file: File) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <MediaPicker content={content} onChange={onChange} uploading={uploading} onImageFile={onImageFile} />
+ 
+      <div>
+        <label className="mb-1 block text-xs font-medium text-neutral-600">Size</label>
+        <div className="flex gap-2">
+          {MEDIA_SIZES.map((size) => (
+            <button
+              key={size}
+              type="button"
+              onClick={() => onChange({ ...content, size })}
+              className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${
+                content.size === size
+                  ? "border-neutral-900 bg-neutral-900 text-white"
+                  : "border-neutral-300 text-neutral-600"
+              }`}
+            >
+              {MEDIA_SIZE_LABEL[size]}
+            </button>
+          ))}
+        </div>
+      </div>
+ 
+      <div>
+        <label className="mb-1 block text-xs font-medium text-neutral-600">
+          Caption <span className="font-normal text-neutral-400">(optional)</span>
+        </label>
+        <input
+          className={inputClass}
+          value={content.caption}
+          onChange={(e) => onChange({ ...content, caption: e.target.value })}
+        />
+      </div>
+    </div>
+  );
+}
+ 
+function MediaTextSectionFields({
+  content,
+  onChange,
+  uploading,
+  onImageFile,
+}: {
+  content: MediaTextSectionContent;
+  onChange: (content: MediaTextSectionContent) => void;
+  uploading: boolean;
+  onImageFile: (file: File) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <MediaPicker content={content} onChange={onChange} uploading={uploading} onImageFile={onImageFile} />
+        <div>
+          <label className="mb-1 block text-xs font-medium text-neutral-600">Position</label>
           <div className="flex gap-2">
-            {IMAGE_TEXT_LAYOUTS.map((layout) => (
+            {MEDIA_LAYOUTS.map((layout) => (
               <button
                 key={layout}
                 type="button"
@@ -133,7 +246,7 @@ function ImageTextSectionFields({
                     : "border-neutral-300 text-neutral-600"
                 }`}
               >
-                {layout === "image-left" ? "Image left" : "Image right"}
+                {layout === "media-left" ? "Media left" : "Media right"}
               </button>
             ))}
           </div>
@@ -254,45 +367,6 @@ function TiersSectionFields({
   );
 }
  
-function VideoSectionFields({
-  content,
-  onChange,
-}: {
-  content: VideoSectionContent;
-  onChange: (content: VideoSectionContent) => void;
-}) {
-  const showError = content.url.length > 0 && !isValidYouTubeUrl(content.url);
- 
-  return (
-    <div className="space-y-3">
-      <div>
-        <label className="mb-1 block text-xs font-medium text-neutral-600">YouTube URL</label>
-        <input
-          className={inputClass}
-          placeholder="https://www.youtube.com/watch?v=..."
-          value={content.url}
-          onChange={(e) => onChange({ ...content, url: e.target.value })}
-        />
-        {showError && (
-          <p className="mt-1 text-xs text-red-600">
-            Doesn&apos;t look like a valid YouTube URL — check it and try again.
-          </p>
-        )}
-      </div>
-      <div>
-        <label className="mb-1 block text-xs font-medium text-neutral-600">
-          Caption <span className="font-normal text-neutral-400">(optional)</span>
-        </label>
-        <input
-          className={inputClass}
-          value={content.caption}
-          onChange={(e) => onChange({ ...content, caption: e.target.value })}
-        />
-      </div>
-    </div>
-  );
-}
- 
 // ---------------------------------------------------------------------------
 // Sortable card wrapper
 // ---------------------------------------------------------------------------
@@ -396,8 +470,16 @@ function SectionCard({
           onChange={(content) => onChange({ ...section, content } as PageSection)}
         />
       )}
-      {section.section_type === "image_text" && (
-        <ImageTextSectionFields
+      {section.section_type === "media" && (
+        <MediaSectionFields
+          content={section.content}
+          onChange={(content) => onChange({ ...section, content } as PageSection)}
+          uploading={uploading}
+          onImageFile={onImageFile}
+        />
+      )}
+      {section.section_type === "media_text" && (
+        <MediaTextSectionFields
           content={section.content}
           onChange={(content) => onChange({ ...section, content } as PageSection)}
           uploading={uploading}
@@ -412,12 +494,6 @@ function SectionCard({
       )}
       {section.section_type === "tiers" && (
         <TiersSectionFields
-          content={section.content}
-          onChange={(content) => onChange({ ...section, content } as PageSection)}
-        />
-      )}
-      {section.section_type === "video" && (
-        <VideoSectionFields
           content={section.content}
           onChange={(content) => onChange({ ...section, content } as PageSection)}
         />
@@ -508,6 +584,9 @@ export function PageEditorForm({
     });
   }
  
+  // Shared by both media-bearing section types (media, media_text) — only
+  // patches image_url on the section currently uploading, leaving every
+  // other field (media_type, video_url, size/layout, caption/body) intact.
   function handleSectionImageUpload(localId: string, file: File) {
     const formData = new FormData();
     formData.append("file", file);
@@ -520,12 +599,18 @@ export function PageEditorForm({
         return next;
       });
       if (result.ok && result.url) {
+        const uploadedUrl = result.url;
         setSections((prev) =>
-          prev.map((s) =>
-            s._localId === localId && s.section_type === "image_text"
-              ? { ...s, content: { ...s.content, image_url: result.url! } }
-              : s
-          )
+          prev.map((s) => {
+            if (s._localId !== localId) return s;
+            if (s.section_type === "media") {
+              return { ...s, content: { ...s.content, image_url: uploadedUrl } };
+            }
+            if (s.section_type === "media_text") {
+              return { ...s, content: { ...s.content, image_url: uploadedUrl } };
+            }
+            return s;
+          })
         );
       } else {
         setSaveMessage({ ok: false, text: result.error ?? "Image upload failed." });
