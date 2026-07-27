@@ -3,7 +3,6 @@ import Link from "next/link";
 import type { PageSection, MediaSize } from "@/lib/content/page-sections";
 import { YouTubeEmbed } from "@/components/youtube-embed";
 import { TestimonialCard } from "@/components/testimonial-card";
-import { TESTIMONIALS } from "@/lib/content/testimonials";
 import { getPublishedPosts } from "@/lib/blog/posts";
 import { createClient } from "@/lib/supabase/server";
 import type { Page } from "@/lib/content/pages";
@@ -284,6 +283,15 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
  
     case "testimonials": {
       const { eyebrow, heading } = section.content;
+      const supabase = await createClient();
+      const { data: testimonialRows } = await supabase
+        .from("testimonials")
+        .select("quote, attribution, logo_url")
+        .eq("status", "published")
+        .order("sort_order", { ascending: true });
+      const testimonials = testimonialRows ?? [];
+      if (testimonials.length === 0) return null;
+ 
       return (
         <div>
           <div className="mb-10 max-w-xl">
@@ -293,7 +301,7 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
             )}
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {TESTIMONIALS.map((t) => (
+            {testimonials.map((t) => (
               <TestimonialCard key={t.attribution} {...t} />
             ))}
           </div>

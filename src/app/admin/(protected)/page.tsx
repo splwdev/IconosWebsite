@@ -21,6 +21,8 @@ export default async function AdminDashboardPage() {
     { count: pageDraftCount },
     { count: pagePublishedCount },
     { count: staffCount },
+    { count: testimonialDraftCount },
+    { count: testimonialPublishedCount },
   ] = await Promise.all([
     supabase.from("posts").select("*", { count: "exact", head: true }).eq("status", "draft"),
     supabase
@@ -34,6 +36,11 @@ export default async function AdminDashboardPage() {
       .select("*", { count: "exact", head: true })
       .eq("status", "published"),
     supabase.from("staff_users").select("*", { count: "exact", head: true }),
+    supabase.from("testimonials").select("*", { count: "exact", head: true }).eq("status", "draft"),
+    supabase
+      .from("testimonials")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "published"),
   ]);
  
   return (
@@ -71,6 +78,8 @@ export default async function AdminDashboardPage() {
           icon={MessageSquareQuote}
           title="Testimonials"
           description="Manage client quotes shown on the homepage and Clients page."
+          href="/admin/testimonials"
+          stat={`${testimonialDraftCount ?? 0} draft${testimonialDraftCount === 1 ? "" : "s"} · ${testimonialPublishedCount ?? 0} published`}
         />
         <AdminCard
           icon={Mail}

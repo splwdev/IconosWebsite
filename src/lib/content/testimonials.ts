@@ -1,8 +1,9 @@
 export interface Testimonial {
   quote: string;
   attribution: string;
+  logo_url?: string | null;
 }
-
+ 
 // Placeholder content — Q23 confirms Iconos has a small number of real
 // testimonials and will confirm permission with each client before use.
 // Replace before launch.
