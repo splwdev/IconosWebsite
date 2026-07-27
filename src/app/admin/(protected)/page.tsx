@@ -20,6 +20,7 @@ export default async function AdminDashboardPage() {
     { data: liveTheme },
     { count: pageDraftCount },
     { count: pagePublishedCount },
+    { count: staffCount },
   ] = await Promise.all([
     supabase.from("posts").select("*", { count: "exact", head: true }).eq("status", "draft"),
     supabase
@@ -32,6 +33,7 @@ export default async function AdminDashboardPage() {
       .from("pages")
       .select("*", { count: "exact", head: true })
       .eq("status", "published"),
+    supabase.from("staff_users").select("*", { count: "exact", head: true }),
   ]);
  
   return (
@@ -79,6 +81,8 @@ export default async function AdminDashboardPage() {
           icon={Users}
           title="Staff access"
           description="Manage who can sign in to this admin area."
+          href="/admin/staff"
+          stat={`${staffCount ?? 0} staff member${staffCount === 1 ? "" : "s"}`}
         />
       </div>
     </div>
