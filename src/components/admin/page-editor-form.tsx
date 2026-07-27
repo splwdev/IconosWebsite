@@ -28,9 +28,11 @@ import {
   SECTION_TYPES,
   SECTION_TYPE_LABELS,
   SECTION_BACKGROUNDS,
+  HOME_ONLY_SECTION_TYPES,
   MEDIA_TYPES,
   MEDIA_SIZES,
   MEDIA_LAYOUTS,
+  CTA_STYLES,
   createBlankSection,
   type PageSection,
   type SectionType,
@@ -39,6 +41,10 @@ import {
   type MediaTextSectionContent,
   type CtaSectionContent,
   type TiersSectionContent,
+  type ServicesGridSectionContent,
+  type ProgramsHighlightSectionContent,
+  type TestimonialsSectionContent,
+  type BlogTeaserSectionContent,
 } from "@/lib/content/page-sections";
 import { isValidYouTubeUrl } from "@/lib/content/youtube";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
@@ -56,6 +62,7 @@ const TYPE_LABEL: Record<Page["page_type"], string> = {
   service: "Service",
   program: "Program",
   custom: "Custom page",
+  home: "Homepage",
 };
  
 const MEDIA_SIZE_LABEL: Record<(typeof MEDIA_SIZES)[number], string> = {
@@ -74,6 +81,23 @@ function withLocalId(section: PageSection): EditableSection {
   return { ...section, _localId: crypto.randomUUID() };
 }
  
+function EyebrowField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-xs font-medium text-neutral-600">
+        Eyebrow <span className="font-normal text-neutral-400">(small label above the heading, optional)</span>
+      </label>
+      <input className={inputClass} value={value} onChange={(e) => onChange(e.target.value)} />
+    </div>
+  );
+}
+ 
 // ---------------------------------------------------------------------------
 // Per-type field components
 // ---------------------------------------------------------------------------
@@ -85,7 +109,15 @@ function TextSectionFields({
   content: TextSectionContent;
   onChange: (content: TextSectionContent) => void;
 }) {
-  return <RichTextEditor content={content.body} onChange={(html) => onChange({ body: html })} />;
+  return (
+    <div className="space-y-3">
+      <EyebrowField value={content.eyebrow} onChange={(eyebrow) => onChange({ ...content, eyebrow })} />
+      <RichTextEditor
+        content={content.body}
+        onChange={(html) => onChange({ ...content, body: html })}
+      />
+    </div>
+  );
 }
  
 /**
@@ -230,6 +262,7 @@ function MediaTextSectionFields({
 }) {
   return (
     <div className="space-y-4">
+      <EyebrowField value={content.eyebrow} onChange={(eyebrow) => onChange({ ...content, eyebrow })} />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <MediaPicker content={content} onChange={onChange} uploading={uploading} onImageFile={onImageFile} />
         <div>
@@ -268,42 +301,87 @@ function CtaSectionFields({
   onChange: (content: CtaSectionContent) => void;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <div className="sm:col-span-2">
-        <label className="mb-1 block text-xs font-medium text-neutral-600">Heading</label>
-        <input
-          className={inputClass}
-          value={content.heading}
-          onChange={(e) => onChange({ ...content, heading: e.target.value })}
-        />
-      </div>
-      <div className="sm:col-span-2">
-        <label className="mb-1 block text-xs font-medium text-neutral-600">
-          Body text (optional)
-        </label>
-        <textarea
-          rows={2}
-          className={inputClass}
-          value={content.body}
-          onChange={(e) => onChange({ ...content, body: e.target.value })}
-        />
-      </div>
+    <div className="space-y-4">
+      <EyebrowField value={content.eyebrow} onChange={(eyebrow) => onChange({ ...content, eyebrow })} />
+ 
       <div>
-        <label className="mb-1 block text-xs font-medium text-neutral-600">Button label</label>
-        <input
-          className={inputClass}
-          value={content.button_label}
-          onChange={(e) => onChange({ ...content, button_label: e.target.value })}
-        />
+        <label className="mb-1 block text-xs font-medium text-neutral-600">Style</label>
+        <div className="flex gap-2">
+          {CTA_STYLES.map((style) => (
+            <button
+              key={style}
+              type="button"
+              onClick={() => onChange({ ...content, style })}
+              className={`rounded-lg border px-3 py-1.5 text-xs font-medium capitalize ${
+                content.style === style
+                  ? "border-neutral-900 bg-neutral-900 text-white"
+                  : "border-neutral-300 text-neutral-600"
+              }`}
+            >
+              {style}
+            </button>
+          ))}
+        </div>
       </div>
-      <div>
-        <label className="mb-1 block text-xs font-medium text-neutral-600">Button link</label>
-        <input
-          className={inputClass}
-          placeholder="/contact"
-          value={content.button_href}
-          onChange={(e) => onChange({ ...content, button_href: e.target.value })}
-        />
+ 
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <label className="mb-1 block text-xs font-medium text-neutral-600">Heading</label>
+          <input
+            className={inputClass}
+            value={content.heading}
+            onChange={(e) => onChange({ ...content, heading: e.target.value })}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="mb-1 block text-xs font-medium text-neutral-600">
+            Body text (optional)
+          </label>
+          <textarea
+            rows={2}
+            className={inputClass}
+            value={content.body}
+            onChange={(e) => onChange({ ...content, body: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-neutral-600">Button label</label>
+          <input
+            className={inputClass}
+            value={content.button_label}
+            onChange={(e) => onChange({ ...content, button_label: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-neutral-600">Button link</label>
+          <input
+            className={inputClass}
+            placeholder="/contact"
+            value={content.button_href}
+            onChange={(e) => onChange({ ...content, button_href: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-neutral-600">
+            Secondary button label <span className="font-normal text-neutral-400">(optional)</span>
+          </label>
+          <input
+            className={inputClass}
+            value={content.secondary_button_label}
+            onChange={(e) => onChange({ ...content, secondary_button_label: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-neutral-600">
+            Secondary button link
+          </label>
+          <input
+            className={inputClass}
+            placeholder="/how-we-work"
+            value={content.secondary_button_href}
+            onChange={(e) => onChange({ ...content, secondary_button_href: e.target.value })}
+          />
+        </div>
       </div>
     </div>
   );
@@ -363,6 +441,53 @@ function TiersSectionFields({
       >
         + Add tier
       </button>
+    </div>
+  );
+}
+ 
+// The four "smart" section types share the same minimal shape (eyebrow +
+// heading), except services_grid which also has an intro paragraph — one
+// generic fields component covers all four, with intro shown only when
+// the caller passes it.
+function SmartSectionFields<T extends { eyebrow: string; heading: string }>({
+  content,
+  onChange,
+  intro,
+}: {
+  content: T;
+  onChange: (content: T) => void;
+  intro?: { value: string; onChange: (value: string) => void };
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-neutral-400">
+        This section renders live content automatically — only the label text below is editable
+        here.
+      </p>
+      <EyebrowField value={content.eyebrow} onChange={(eyebrow) => onChange({ ...content, eyebrow })} />
+      <div>
+        <label className="mb-1 block text-xs font-medium text-neutral-600">
+          Heading <span className="font-normal text-neutral-400">(optional)</span>
+        </label>
+        <input
+          className={inputClass}
+          value={content.heading}
+          onChange={(e) => onChange({ ...content, heading: e.target.value })}
+        />
+      </div>
+      {intro && (
+        <div>
+          <label className="mb-1 block text-xs font-medium text-neutral-600">
+            Intro text <span className="font-normal text-neutral-400">(optional)</span>
+          </label>
+          <textarea
+            rows={2}
+            className={inputClass}
+            value={intro.value}
+            onChange={(e) => intro.onChange(e.target.value)}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -498,6 +623,35 @@ function SectionCard({
           onChange={(content) => onChange({ ...section, content } as PageSection)}
         />
       )}
+      {section.section_type === "services_grid" && (
+        <SmartSectionFields<ServicesGridSectionContent>
+          content={section.content}
+          onChange={(content) => onChange({ ...section, content } as PageSection)}
+          intro={{
+            value: section.content.intro,
+            onChange: (intro) =>
+              onChange({ ...section, content: { ...section.content, intro } } as PageSection),
+          }}
+        />
+      )}
+      {section.section_type === "programs_highlight" && (
+        <SmartSectionFields<ProgramsHighlightSectionContent>
+          content={section.content}
+          onChange={(content) => onChange({ ...section, content } as PageSection)}
+        />
+      )}
+      {section.section_type === "testimonials" && (
+        <SmartSectionFields<TestimonialsSectionContent>
+          content={section.content}
+          onChange={(content) => onChange({ ...section, content } as PageSection)}
+        />
+      )}
+      {section.section_type === "blog_teaser" && (
+        <SmartSectionFields<BlogTeaserSectionContent>
+          content={section.content}
+          onChange={(content) => onChange({ ...section, content } as PageSection)}
+        />
+      )}
     </div>
   );
 }
@@ -558,7 +712,20 @@ export function PageEditorForm({
   const isPublished = page.status === "published";
   const previewSlug = isPublished ? page.slug : slugify(titleValue || "");
   const previewPath =
-    page.page_type === "custom" ? `/${previewSlug}` : `/${page.parent_section}/${previewSlug}`;
+    page.page_type === "custom"
+      ? `/${previewSlug}`
+      : page.page_type === "home"
+        ? "/"
+        : `/${page.parent_section}/${previewSlug}`;
+ 
+  // Homepage gets access to every section type, including the four
+  // live-data ones; every other page type sticks to the original generic
+  // five — services_grid etc. wouldn't make sense standalone on a service
+  // or custom page.
+  const availableSectionTypes =
+    page.page_type === "home"
+      ? SECTION_TYPES
+      : SECTION_TYPES.filter((t) => !HOME_ONLY_SECTION_TYPES.includes(t));
  
   function addSection(type: SectionType) {
     setSections((prev) => [...prev, withLocalId(createBlankSection(type))]);
@@ -697,22 +864,26 @@ export function PageEditorForm({
           {page.parent_section && <span>· {page.parent_section}</span>}
         </div>
  
-        <div>
-          <label className="mb-1 block text-sm font-medium text-neutral-700">Title</label>
-          <input className={inputClass} {...register("title")} />
-          {errors.title && <p className="mt-1 text-xs text-red-600">{errors.title.message}</p>}
-        </div>
+        {page.page_type !== "home" && (
+          <div>
+            <label className="mb-1 block text-sm font-medium text-neutral-700">Title</label>
+            <input className={inputClass} {...register("title")} />
+            {errors.title && <p className="mt-1 text-xs text-red-600">{errors.title.message}</p>}
+          </div>
+        )}
  
         <div>
           <label className="mb-1 block text-sm font-medium text-neutral-700">URL</label>
           <div className="flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm">
             <span className="font-medium text-neutral-700">{previewPath || "…"}</span>
           </div>
-          <p className="mt-1 text-xs text-neutral-400">
-            {isPublished
-              ? "Locked now that this page is published, so existing links keep working."
-              : "Generated automatically from the title above."}
-          </p>
+          {page.page_type !== "home" && (
+            <p className="mt-1 text-xs text-neutral-400">
+              {isPublished
+                ? "Locked now that this page is published, so existing links keep working."
+                : "Generated automatically from the title above."}
+            </p>
+          )}
         </div>
  
         {page.page_type === "custom" && (
@@ -747,18 +918,20 @@ export function PageEditorForm({
           </div>
         )}
  
-        <div>
-          <label className="mb-1 block text-sm font-medium text-neutral-700">
-            Summary{" "}
-            <span className="font-normal text-neutral-400">
-              (shown on the overview page and in search results)
-            </span>
-          </label>
-          <textarea rows={2} className={inputClass} {...register("summary")} />
-          {errors.summary && (
-            <p className="mt-1 text-xs text-red-600">{errors.summary.message}</p>
-          )}
-        </div>
+        {page.page_type !== "home" && (
+          <div>
+            <label className="mb-1 block text-sm font-medium text-neutral-700">
+              Summary{" "}
+              <span className="font-normal text-neutral-400">
+                (shown on the overview page and in search results)
+              </span>
+            </label>
+            <textarea rows={2} className={inputClass} {...register("summary")} />
+            {errors.summary && (
+              <p className="mt-1 text-xs text-red-600">{errors.summary.message}</p>
+            )}
+          </div>
+        )}
  
         <div>
           <div className="mb-2 flex items-center justify-between">
@@ -800,7 +973,7 @@ export function PageEditorForm({
           </DndContext>
  
           <div className="mt-4 flex flex-wrap gap-2">
-            {SECTION_TYPES.map((type) => (
+            {availableSectionTypes.map((type) => (
               <button
                 key={type}
                 type="button"
@@ -813,12 +986,14 @@ export function PageEditorForm({
           </div>
         </div>
  
-        <div>
-          <label className="mb-1 block text-sm font-medium text-neutral-700">
-            Meta description <span className="font-normal text-neutral-400">(SEO, optional)</span>
-          </label>
-          <input className={inputClass} {...register("meta_description")} />
-        </div>
+        {page.page_type !== "home" && (
+          <div>
+            <label className="mb-1 block text-sm font-medium text-neutral-700">
+              Meta description <span className="font-normal text-neutral-400">(SEO, optional)</span>
+            </label>
+            <input className={inputClass} {...register("meta_description")} />
+          </div>
+        )}
  
         {saveMessage && (
           <p className={`text-sm ${saveMessage.ok ? "text-emerald-700" : "text-red-600"}`}>
@@ -835,7 +1010,7 @@ export function PageEditorForm({
             {isSaving ? "Saving…" : "Save draft"}
           </button>
  
-          {page.status === "published" ? (
+          {page.page_type === "home" ? null : page.status === "published" ? (
             <button
               type="button"
               disabled={isPublishing}
@@ -855,18 +1030,20 @@ export function PageEditorForm({
             </button>
           )}
  
-          <button
-            type="button"
-            disabled={isDeleting}
-            onClick={() => {
-              if (confirm("Delete this page? This can't be undone.")) {
-                startDeleting(() => deletePage(page.id));
-              }
-            }}
-            className="ml-auto text-sm font-medium text-red-600 disabled:opacity-50"
-          >
-            {isDeleting ? "Deleting…" : "Delete page"}
-          </button>
+          {page.page_type !== "home" && (
+            <button
+              type="button"
+              disabled={isDeleting}
+              onClick={() => {
+                if (confirm("Delete this page? This can't be undone.")) {
+                  startDeleting(() => deletePage(page.id));
+                }
+              }}
+              className="ml-auto text-sm font-medium text-red-600 disabled:opacity-50"
+            >
+              {isDeleting ? "Deleting…" : "Delete page"}
+            </button>
+          )}
         </div>
       </form>
  

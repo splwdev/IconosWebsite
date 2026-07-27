@@ -1,6 +1,6 @@
 import { z } from "zod";
  
-export const PAGE_TYPES = ["service", "program", "custom"] as const;
+export const PAGE_TYPES = ["service", "program", "custom", "home"] as const;
 export type PageType = (typeof PAGE_TYPES)[number];
  
 export const PARENT_SECTIONS = ["what-we-do", "how-we-work"] as const;
@@ -65,6 +65,24 @@ export const pageInputSchema = z
           code: z.ZodIssueCode.custom,
           path: ["slug"],
           message: `"${data.slug}" is a reserved URL and can't be used for a custom page`,
+        });
+      }
+    } else if (data.page_type === "home") {
+      // The singleton homepage — routed by page_type, not by slug, so no
+      // reserved-slug check applies (its slug value has no routing
+      // significance at all, unlike custom pages).
+      if (data.parent_section !== null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["parent_section"],
+          message: "The homepage must not belong to a section",
+        });
+      }
+      if (data.show_in_nav) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["show_in_nav"],
+          message: "The homepage is not part of the header nav",
         });
       }
     } else {

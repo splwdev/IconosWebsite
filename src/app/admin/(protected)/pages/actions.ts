@@ -30,6 +30,8 @@ function revalidatePublicPaths(page: PublicPathInfo) {
   revalidatePath("/admin/pages");
   if (page.page_type === "custom") {
     revalidatePath(`/${page.slug}`);
+  } else if (page.page_type === "home") {
+    revalidatePath("/");
   } else {
     const section = page.parent_section as ParentSection;
     revalidatePath(`/${section}`);
@@ -46,6 +48,7 @@ const BLANK_TITLES: Record<PageType, string> = {
   service: "Untitled service",
   program: "Untitled program",
   custom: "Untitled page",
+  home: "Homepage", // unreachable in practice — no UI ever creates a second 'home' page
 };
  
 /**
@@ -194,7 +197,7 @@ export async function saveSections(
       return {
         section_type: "text",
         background: section.background,
-        content: { body: sanitizePostBody(section.content.body) },
+        content: { eyebrow: section.content.eyebrow, body: sanitizePostBody(section.content.body) },
       };
     }
     if (section.section_type === "media_text") {

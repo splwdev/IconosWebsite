@@ -7,10 +7,13 @@ const TYPE_LABEL: Record<Page["page_type"], string> = {
   service: "Service",
   program: "Program",
   custom: "Custom page",
+  home: "Homepage",
 };
  
 function pagePublicPath(page: Page): string {
-  return page.page_type === "custom" ? `/${page.slug}` : `/${page.parent_section}/${page.slug}`;
+  if (page.page_type === "custom") return `/${page.slug}`;
+  if (page.page_type === "home") return "/";
+  return `/${page.parent_section}/${page.slug}`;
 }
  
 export default async function AdminPagesPage() {
@@ -80,7 +83,7 @@ export default async function AdminPagesPage() {
               >
                 Edit
               </Link>
-              {page.status === "published" ? (
+              {page.page_type === "home" ? null : page.status === "published" ? (
                 <form action={unpublishPage.bind(null, page.id)}>
                   <button className="rounded-lg border border-neutral-300 px-3 py-1.5 font-medium text-neutral-700 hover:bg-neutral-50">
                     Unpublish
