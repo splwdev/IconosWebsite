@@ -23,6 +23,7 @@ export default async function AdminDashboardPage() {
     { count: staffCount },
     { count: testimonialDraftCount },
     { count: testimonialPublishedCount },
+    { count: unreadSubmissionCount },
   ] = await Promise.all([
     supabase.from("posts").select("*", { count: "exact", head: true }).eq("status", "draft"),
     supabase
@@ -41,6 +42,7 @@ export default async function AdminDashboardPage() {
       .from("testimonials")
       .select("*", { count: "exact", head: true })
       .eq("status", "published"),
+    supabase.from("contact_submissions").select("*", { count: "exact", head: true }).is("read_at", null),
   ]);
  
   return (
@@ -85,6 +87,12 @@ export default async function AdminDashboardPage() {
           icon={Mail}
           title="Contact submissions"
           description="Review enquiries received through the contact form."
+          href="/admin/contact-submissions"
+          stat={
+            unreadSubmissionCount && unreadSubmissionCount > 0
+              ? `${unreadSubmissionCount} unread`
+              : "All caught up"
+          }
         />
         <AdminCard
           icon={Users}
