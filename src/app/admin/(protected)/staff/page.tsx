@@ -1,89 +1,40 @@
-import {
-  LayoutDashboard,
-  FileText,
-  Palette,
-  MessageSquareQuote,
-  Mail,
-  Users,
-  Briefcase,
-} from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
-import { AdminSectionBadge } from "@/components/admin/section-badge";
-import { AdminCard } from "@/components/admin/admin-card";
+import { getStaffList } from "./actions";
+import { AddStaffForm } from "@/components/admin/add-staff-form";
+import { StaffMemberRow } from "@/components/admin/staff-member-row";
  
-export default async function AdminDashboardPage() {
-  const supabase = await createClient();
+// Forces this route to always render fresh, bypassing any caching layer
+// entirely — added specifically to rule out a suspected OpenNext
+// incremental-cache issue where this URL was intermittently returning a
+// different page's rendered content. Admin pages should never be cached
+// anyway (auth-sensitive, DB-driven), so this is safe regardless of
+// whether it turns out to be the actual fix.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
  
-  const [
-    { count: draftCount },
-    { count: publishedCount },
-    { data: liveTheme },
-    { count: pageDraftCount },
-    { count: pagePublishedCount },
-    { count: staffCount },
-  ] = await Promise.all([
-    supabase.from("posts").select("*", { count: "exact", head: true }).eq("status", "draft"),
-    supabase
-      .from("posts")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "published"),
-    supabase.from("themes").select("name").eq("status", "published").maybeSingle(),
-    supabase.from("pages").select("*", { count: "exact", head: true }).eq("status", "draft"),
-    supabase
-      .from("pages")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "published"),
-    supabase.from("staff_users").select("*", { count: "exact", head: true }),
-  ]);
+export default async function AdminStaffPage() {
+  const staff = await getStaffList();
  
   return (
     <div>
-      <AdminSectionBadge icon={LayoutDashboard} label="Content Admin" />
-      <h1 className="mb-2 mt-3 text-2xl font-semibold text-neutral-900">Dashboard</h1>
-      <p className="mb-10 text-sm text-neutral-500">
-        Manage the Iconos Group website — blog posts, brand theme, and the
-        sections below as they come online.
-      </p>
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-neutral-900">Staff access</h1>
+        <p className="mt-1 text-sm text-neutral-500">
+          Manage who can sign in to this admin area. Someone must sign in with Microsoft at
+          least once — even if they see &ldquo;not authorized&rdquo; — before they can be added
+          here, since that first attempt is what creates their account record.
+        </p>
+      </div>
  
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        <AdminCard
-          icon={FileText}
-          title="Posts"
-          description="Write, edit and publish blog posts."
-          href="/admin/posts"
-          stat={`${draftCount ?? 0} draft${draftCount === 1 ? "" : "s"} · ${publishedCount ?? 0} published`}
-        />
-        <AdminCard
-          icon={Palette}
-          title="Themes"
-          description="Preview and publish the site's brand theme."
-          href="/admin/themes"
-          stat={liveTheme ? `Live: ${liveTheme.name}` : "No theme published yet"}
-        />
-        <AdminCard
-          icon={Briefcase}
-          title="Pages"
-          description="Edit practice area pages, How We Work programs, and custom pages."
-          href="/admin/pages"
-          stat={`${pageDraftCount ?? 0} draft${pageDraftCount === 1 ? "" : "s"} · ${pagePublishedCount ?? 0} published`}
-        />
-        <AdminCard
-          icon={MessageSquareQuote}
-          title="Testimonials"
-          description="Manage client quotes shown on the homepage and Clients page."
-        />
-        <AdminCard
-          icon={Mail}
-          title="Contact submissions"
-          description="Review enquiries received through the contact form."
-        />
-        <AdminCard
-          icon={Users}
-          title="Staff access"
-          description="Manage who can sign in to this admin area."
-          href="/admin/staff"
-          stat={`${staffCount ?? 0} staff member${staffCount === 1 ? "" : "s"}`}
-        />
+      <div className="mb-8 rounded-xl border border-neutral-200 bg-white p-5">
+        <h2 className="mb-4 font-semibold text-neutral-900">Add staff member</h2>
+        <AddStaffForm />
+      </div>
+ 
+      <div className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white">
+        {staff.length === 0 && <p className="p-6 text-sm text-neutral-500">No staff yet.</p>}
+        {staff.map((member) => (
+          <StaffMemberRow key={member.user_id} member={member} />
+        ))}
       </div>
     </div>
   );
