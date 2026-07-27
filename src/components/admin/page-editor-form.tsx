@@ -1007,7 +1007,7 @@ export function PageEditorForm({
             disabled={isSaving}
             className="rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50"
           >
-            {isSaving ? "Saving…" : "Save draft"}
+            {isSaving ? "Saving…" : page.page_type === "home" ? "Save changes" : "Save draft"}
           </button>
  
           {page.page_type === "home" ? null : page.status === "published" ? (
