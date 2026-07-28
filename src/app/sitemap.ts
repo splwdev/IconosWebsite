@@ -6,7 +6,12 @@ import { getPublishedPosts } from "@/lib/blog/posts";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.iconos-group.com";
  
-  const staticRoutes = [
+  // Static entries with no natural "last modified" source of their own —
+  // "" (the homepage) is deliberately here rather than pulled from the
+  // pages table, since the singleton page_type: 'home' row has no
+  // parent_section and no real slug-based URL of its own; it always maps
+  // to the root, which this static entry already covers.
+  const staticRoutes: MetadataRoute.Sitemap = [
     "",
     "/who-we-are",
     "/what-we-do",
@@ -15,33 +20,40 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/work-with-us",
     "/contact",
     "/blog",
-  ];
+  ].map((path) => ({ url: `${base}${path}`, lastModified: new Date() }));
  
   const supabase = await createClient();
   const [{ data: pages }, posts] = await Promise.all([
     supabase
       .from("pages")
-      .select("page_type, parent_section, slug")
-      .eq("status", "published"),
+      .select("page_type, parent_section, slug, updated_at")
+      .eq("status", "published")
+      .neq("page_type", "home"),
     getPublishedPosts(),
   ]);
  
   // Services and Programs live at /[parent_section]/[slug]; Custom pages
-  // (none exist yet, but the sitemap already needs to account for them —
-  // the old static version had no way to represent this type at all) live
-  // at a bare top-level /[slug].
-  const pageRoutes = (pages ?? []).map((p) =>
-    p.page_type === "custom" ? `/${p.slug}` : `/${p.parent_section}/${p.slug}`
-  );
+  // live at a bare top-level /[slug]. 'home' is explicitly excluded above
+  // (query filter) — it has no parent_section, which would otherwise
+  // produce a broken /null/[slug] entry here.
+  const pageRoutes: MetadataRoute.Sitemap = (pages ?? []).map((p) => ({
+    url: `${base}${p.page_type === "custom" ? `/${p.slug}` : `/${p.parent_section}/${p.slug}`}`,
+    lastModified: new Date(p.updated_at),
+  }));
  
-  const dynamicRoutes = [
-    ...pageRoutes,
-    ...posts.map((p) => `/blog/${p.slug}`),
-    ...LEGAL_PAGES.map((p) => `/legal/${p.slug}`),
-  ];
+  const postRoutes: MetadataRoute.Sitemap = posts.map((p) => ({
+    url: `${base}/blog/${p.slug}`,
+    lastModified: new Date(p.updated_at),
+  }));
  
-  return [...staticRoutes, ...dynamicRoutes].map((path) => ({
-    url: `${base}${path}`,
+  // Legal pages are static code, not database rows — no real "last
+  // modified" timestamp exists for them, so this falls back to build time
+  // for these specifically (unlike everything else above, which now
+  // reflects genuine content-change dates).
+  const legalRoutes: MetadataRoute.Sitemap = LEGAL_PAGES.map((p) => ({
+    url: `${base}/legal/${p.slug}`,
     lastModified: new Date(),
   }));
+ 
+  return [...staticRoutes, ...pageRoutes, ...postRoutes, ...legalRoutes];
 }
