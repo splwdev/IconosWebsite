@@ -3,11 +3,11 @@ import { notFound } from "next/navigation";
 import { PageHero } from "@/components/page-hero";
 import { Container, Section } from "@/components/ui";
 import { LEGAL_PAGES, getLegalPageBySlug } from "@/lib/content/legal-pages";
-
+ 
 export function generateStaticParams() {
   return LEGAL_PAGES.map((p) => ({ slug: p.slug }));
 }
-
+ 
 export async function generateMetadata({
   params,
 }: {
@@ -18,7 +18,7 @@ export async function generateMetadata({
   if (!page) return {};
   return { title: `${page.title} | Iconos Group` };
 }
-
+ 
 export default async function LegalPage({
   params,
 }: {
@@ -27,7 +27,7 @@ export default async function LegalPage({
   const { slug } = await params;
   const page = getLegalPageBySlug(slug);
   if (!page) notFound();
-
+ 
   return (
     <>
       <PageHero title={page.title} />
@@ -38,6 +38,11 @@ export default async function LegalPage({
               This page contains placeholder text. Final wording is pending
               Iconos Group&apos;s own review before launch (see the
               completed website questionnaire, Q34).
+            </div>
+          )}
+          {page.reviewNote && (
+            <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">
+              {page.reviewNote}
             </div>
           )}
           {page.body.map((paragraph, i) => (
