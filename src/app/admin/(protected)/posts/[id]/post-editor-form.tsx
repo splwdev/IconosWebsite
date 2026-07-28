@@ -7,6 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { Post } from "@/lib/blog/types";
 import { postInputSchema, slugify, type PostInput } from "@/lib/blog/types";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { generateMetaDescription } from "@/lib/content/generate-meta-description";
+import { isValidYouTubeUrl } from "@/lib/content/youtube";
 import { savePost, deletePost, uploadFeaturedImage } from "../actions";
  
 const CATEGORIES = ["Corporate", "Commercial", "Data Protection", "IP", "Employment", "M&A"];
@@ -29,6 +31,7 @@ export function PostEditorForm({ post }: { post: Post }) {
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<PostInput>({
     resolver: zodResolver(postInputSchema),
@@ -40,6 +43,7 @@ export function PostEditorForm({ post }: { post: Post }) {
       category: post.category,
       meta_description: post.meta_description ?? "",
       featured_image_url: post.featured_image_url,
+      featured_video_url: post.featured_video_url ?? "",
     },
   });
  
@@ -49,6 +53,12 @@ export function PostEditorForm({ post }: { post: Post }) {
  
   function handleTitleChange(value: string) {
     setValue("title", value);
+  }
+ 
+  function handleGenerateMetaDescription() {
+    const { excerpt, body } = getValues();
+    const generated = generateMetaDescription(excerpt, body);
+    setValue("meta_description", generated, { shouldValidate: true });
   }
  
   // All three actions below run the *current* form values through the
@@ -176,10 +186,22 @@ export function PostEditorForm({ post }: { post: Post }) {
         </div>
  
         <div>
-          <label className="mb-1 block text-sm font-medium text-neutral-700">
-            Meta description <span className="font-normal text-neutral-400">(SEO, optional)</span>
-          </label>
+          <div className="mb-1 flex items-center justify-between">
+            <label className="block text-sm font-medium text-neutral-700">
+              Meta description <span className="font-normal text-neutral-400">(SEO, optional)</span>
+            </label>
+            <button
+              type="button"
+              onClick={handleGenerateMetaDescription}
+              className="text-xs font-medium text-neutral-600 underline hover:text-neutral-900"
+            >
+              Generate from content
+            </button>
+          </div>
           <input className={inputClass} {...register("meta_description")} />
+          <p className="mt-1 text-xs text-neutral-400">
+            {(watch("meta_description")?.length ?? 0)}/160 characters — aim for 150–160
+          </p>
           {errors.meta_description && (
             <p className="mt-1 text-xs text-red-600">{errors.meta_description.message}</p>
           )}
@@ -256,6 +278,29 @@ export function PostEditorForm({ post }: { post: Post }) {
         />
         {isUploading && <p className="mt-1 text-xs text-neutral-500">Uploading…</p>}
         <p className="mt-2 text-xs text-neutral-400">JPEG, PNG or WebP, up to 5MB.</p>
+ 
+        <div className="mt-6">
+          <label className="mb-1 block text-sm font-medium text-neutral-700">
+            Featured video <span className="font-normal text-neutral-400">(optional)</span>
+          </label>
+          <input
+            className={inputClass}
+            placeholder="https://www.youtube.com/watch?v=..."
+            {...register("featured_video_url")}
+          />
+          {(() => {
+            const videoUrl = watch("featured_video_url");
+            return videoUrl && !isValidYouTubeUrl(videoUrl) ? (
+              <p className="mt-1 text-xs text-red-600">
+                Doesn&apos;t look like a valid YouTube URL — check it and try again.
+              </p>
+            ) : (
+              <p className="mt-2 text-xs text-neutral-400">
+                If set, this replaces the featured image above on the published post.
+              </p>
+            );
+          })()}
+        </div>
       </div>
     </div>
   );

@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageHero } from "@/components/page-hero";
 import { Container, Section } from "@/components/ui";
+import { YouTubeEmbed } from "@/components/youtube-embed";
 import { getPublishedPostBySlug } from "@/lib/blog/posts";
-
+ 
 // No generateStaticParams: posts are published dynamically by staff at any
 // time, so this route resolves per-request (with a short revalidate window)
 // rather than being fixed at build time.
 export const revalidate = 60;
-
+ 
 export async function generateMetadata({
   params,
 }: {
@@ -22,7 +23,7 @@ export async function generateMetadata({
     description: post.meta_description || post.excerpt,
   };
 }
-
+ 
 export default async function BlogPostPage({
   params,
 }: {
@@ -31,7 +32,7 @@ export default async function BlogPostPage({
   const { slug } = await params;
   const post = await getPublishedPostBySlug(slug);
   if (!post) notFound();
-
+ 
   return (
     <>
       <PageHero eyebrow={post.category} title={post.title} />
@@ -45,16 +46,25 @@ export default async function BlogPostPage({
                 year: "numeric",
               })}
           </p>
-
-          {post.featured_image_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={post.featured_image_url}
-              alt=""
-              className="mb-8 aspect-video w-full rounded-2xl object-cover"
-            />
+ 
+          {/* A featured video takes priority over a featured image — a
+              video-led post (vlog, talk) generally has no separate need
+              for a static hero image too. */}
+          {post.featured_video_url ? (
+            <div className="mb-8">
+              <YouTubeEmbed url={post.featured_video_url} title={post.title} />
+            </div>
+          ) : (
+            post.featured_image_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={post.featured_image_url}
+                alt=""
+                className="mb-8 aspect-video w-full rounded-2xl object-cover"
+              />
+            )
           )}
-
+ 
           {/*
             post.body is HTML from the rich text editor, sanitized with
             DOMPurify at save time (see sanitizePostBody in

@@ -72,6 +72,7 @@ export async function savePost(
     category: parsed.data.category,
     meta_description: parsed.data.meta_description || null,
     featured_image_url: parsed.data.featured_image_url ?? null,
+    featured_video_url: parsed.data.featured_video_url || null,
   };
  
   // Slug auto-follows the title only while still a draft — including on

@@ -47,6 +47,7 @@ import {
   type BlogTeaserSectionContent,
 } from "@/lib/content/page-sections";
 import { isValidYouTubeUrl } from "@/lib/content/youtube";
+import { generateMetaDescription } from "@/lib/content/generate-meta-description";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import {
   savePage,
@@ -689,6 +690,8 @@ export function PageEditorForm({
     register,
     handleSubmit,
     watch,
+    getValues,
+    setValue,
     formState: { errors },
   } = useForm<PageInput>({
     resolver: zodResolver(pageInputSchema),
@@ -841,6 +844,35 @@ export function PageEditorForm({
     });
   }
  
+  // Concatenates whatever text exists across every section, regardless of
+  // type — text/media_text bodies, cta heading+body, tiers names+
+  // descriptions. generateMetaDescription strips HTML tags itself, so raw
+  // Tiptap HTML can be passed through unmodified here.
+  function extractSectionsText(): string {
+    return sections
+      .map((s) => {
+        switch (s.section_type) {
+          case "text":
+            return s.content.body;
+          case "media_text":
+            return s.content.body;
+          case "cta":
+            return `${s.content.heading} ${s.content.body}`;
+          case "tiers":
+            return s.content.tiers.map((t) => `${t.name} ${t.description}`).join(" ");
+          default:
+            return "";
+        }
+      })
+      .join(" ");
+  }
+ 
+  function handleGenerateMetaDescription() {
+    const { summary } = getValues();
+    const generated = generateMetaDescription(summary, extractSectionsText());
+    setValue("meta_description", generated, { shouldValidate: true });
+  }
+ 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -988,10 +1020,22 @@ export function PageEditorForm({
  
         {page.page_type !== "home" && (
           <div>
-            <label className="mb-1 block text-sm font-medium text-neutral-700">
-              Meta description <span className="font-normal text-neutral-400">(SEO, optional)</span>
-            </label>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="block text-sm font-medium text-neutral-700">
+                Meta description <span className="font-normal text-neutral-400">(SEO, optional)</span>
+              </label>
+              <button
+                type="button"
+                onClick={handleGenerateMetaDescription}
+                className="text-xs font-medium text-neutral-600 underline hover:text-neutral-900"
+              >
+                Generate from content
+              </button>
+            </div>
             <input className={inputClass} {...register("meta_description")} />
+            <p className="mt-1 text-xs text-neutral-400">
+              {(watch("meta_description")?.length ?? 0)}/160 characters — aim for 150–160
+            </p>
           </div>
         )}
  
