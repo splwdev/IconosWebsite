@@ -5,10 +5,13 @@ import { Container, Section } from "@/components/ui";
 import { YouTubeEmbed } from "@/components/youtube-embed";
 import { getPublishedPostBySlug } from "@/lib/blog/posts";
  
-// No generateStaticParams: posts are published dynamically by staff at any
-// time, so this route resolves per-request (with a short revalidate window)
-// rather than being fixed at build time.
-export const revalidate = 60;
+// No generateStaticParams, and deliberately no ISR revalidate window either
+// — this always renders fresh per request, consistent with every other
+// Supabase-driven route in the app. ISR relies on OpenNext's incremental
+// cache, which has no KV/R2/Durable Object backend configured on this
+// Cloudflare deployment (the same class of caching gap that caused the
+// Staff page bug), so opting into it here was unreliable rather than
+// actually faster.
  
 export async function generateMetadata({
   params,
