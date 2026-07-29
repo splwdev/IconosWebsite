@@ -48,6 +48,7 @@ export const pageInputSchema = z
     tiers: z.array(tierSchema).nullable(),
     meta_description: z.string().nullable(),
     featured_image_url: z.string().nullable(),
+    featured_image_alt: z.string().nullable(),
     sort_order: z.number().int(),
     show_in_nav: z.boolean(),
   })
@@ -125,6 +126,7 @@ export interface Page {
   tiers: PageTier[] | null;
   meta_description: string | null;
   featured_image_url: string | null;
+  featured_image_alt: string | null;
   status: PageStatus;
   sort_order: number;
   show_in_nav: boolean;

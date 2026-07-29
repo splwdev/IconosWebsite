@@ -54,7 +54,7 @@ export default async function WorkProgramPage({
             <div className="relative mb-10 aspect-video w-full overflow-hidden rounded-2xl">
               <Image
                 src={program.featured_image_url}
-                alt=""
+                alt={program.featured_image_alt ?? ""}
                 fill
                 unoptimized
                 className="object-cover"

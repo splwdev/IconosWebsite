@@ -1,14 +1,14 @@
 import Image from "next/image";
 import type { Testimonial } from "@/lib/content/testimonials";
  
-export function TestimonialCard({ quote, attribution, logo_url }: Testimonial) {
+export function TestimonialCard({ quote, attribution, logo_url, logo_alt }: Testimonial) {
   return (
     <div className="rounded-2xl bg-brand-cream p-7">
       {logo_url ? (
         <div className="relative mb-3 h-8 w-28">
           <Image
             src={logo_url}
-            alt=""
+            alt={logo_alt || ""}
             fill
             unoptimized
             className="object-contain object-left"

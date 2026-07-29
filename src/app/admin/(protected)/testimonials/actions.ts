@@ -51,6 +51,7 @@ export async function saveTestimonial(
     quote: parsed.data.quote,
     attribution: parsed.data.attribution,
     logo_url: parsed.data.logo_url,
+    logo_alt: parsed.data.logo_alt,
     sort_order: parsed.data.sort_order,
   };
  

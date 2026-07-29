@@ -2,6 +2,7 @@ export interface Testimonial {
   quote: string;
   attribution: string;
   logo_url?: string | null;
+  logo_alt?: string | null;
 }
  
 // Placeholder content — Q23 confirms Iconos has a small number of real

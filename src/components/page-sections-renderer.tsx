@@ -63,7 +63,7 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
       );
  
     case "media": {
-      const { media_type, image_url, video_url, size, caption } = section.content;
+      const { media_type, image_url, image_alt, size, caption, video_url } = section.content;
       return (
         <div>
           <div className={`mx-auto ${MEDIA_SIZE_CLASS[size]}`}>
@@ -71,7 +71,7 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
               <YouTubeEmbed url={video_url} title={caption || undefined} />
             ) : image_url ? (
               <div className="relative aspect-video w-full overflow-hidden rounded-2xl">
-                <Image src={image_url} alt="" fill unoptimized className="object-cover" />
+                <Image src={image_url} alt={image_alt} fill unoptimized className="object-cover" />
               </div>
             ) : null}
           </div>
@@ -81,7 +81,7 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
     }
  
     case "media_text": {
-      const { eyebrow, media_type, image_url, video_url, body, layout } = section.content;
+      const { eyebrow, media_type, image_url, image_alt, video_url, body, layout } = section.content;
       const mediaFirst = layout !== "media-right";
       return (
         <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-2">
@@ -94,7 +94,7 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
               )
             ) : image_url ? (
               <div className="relative aspect-video w-full overflow-hidden rounded-2xl">
-                <Image src={image_url} alt="" fill unoptimized className="object-cover" />
+                <Image src={image_url} alt={image_alt} fill unoptimized className="object-cover" />
               </div>
             ) : (
               <div className="aspect-video w-full rounded-2xl bg-brand-cream" />
@@ -286,7 +286,7 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
       const supabase = await createClient();
       const { data: testimonialRows } = await supabase
         .from("testimonials")
-        .select("quote, attribution, logo_url")
+        .select("quote, attribution, logo_url, logo_alt")
         .eq("status", "published")
         .order("sort_order", { ascending: true });
       const testimonials = testimonialRows ?? [];

@@ -4,6 +4,7 @@ export const testimonialInputSchema = z.object({
   quote: z.string().min(1, "Quote is required"),
   attribution: z.string().min(1, "Attribution is required"),
   logo_url: z.string().nullable(),
+  logo_alt: z.string().nullable(),
   sort_order: z.number().int(),
 });
  
@@ -16,6 +17,7 @@ export interface TestimonialRow {
   quote: string;
   attribution: string;
   logo_url: string | null;
+  logo_alt: string | null;
   status: TestimonialStatus;
   sort_order: number;
   created_at: string;

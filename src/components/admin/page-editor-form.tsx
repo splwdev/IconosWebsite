@@ -127,7 +127,7 @@ function TextSectionFields({
  * image-upload-vs-YouTube-URL input, since both section content shapes
  * carry the identical media_type/image_url/video_url trio.
  */
-function MediaPicker<T extends { media_type: "image" | "video"; image_url: string | null; video_url: string }>({
+function MediaPicker<T extends { media_type: "image" | "video"; image_url: string | null; image_alt: string; video_url: string }>({
   content,
   onChange,
   uploading,
@@ -163,7 +163,13 @@ function MediaPicker<T extends { media_type: "image" | "video"; image_url: strin
         <div>
           {content.image_url ? (
             <div className="relative mb-2 aspect-video overflow-hidden rounded-lg border border-neutral-200">
-              <Image src={content.image_url} alt="" fill className="object-cover" unoptimized />
+              <Image
+                src={content.image_url}
+                alt={content.image_alt}
+                fill
+                className="object-cover"
+                unoptimized
+              />
             </div>
           ) : (
             <div className="mb-2 flex aspect-video items-center justify-center rounded-lg border border-dashed border-neutral-300 text-xs text-neutral-400">
@@ -181,6 +187,14 @@ function MediaPicker<T extends { media_type: "image" | "video"; image_url: strin
             className="text-xs"
           />
           {uploading && <p className="mt-1 text-xs text-neutral-500">Uploading…</p>}
+          {content.image_url && (
+            <input
+              className={`${inputClass} mt-2`}
+              placeholder="Alt text (describe the image for screen readers)"
+              value={content.image_alt}
+              onChange={(e) => onChange({ ...content, image_alt: e.target.value })}
+            />
+          )}
         </div>
       ) : (
         <div>
@@ -675,6 +689,7 @@ export function PageEditorForm({
  
   const [saveMessage, setSaveMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [imageUrl, setImageUrl] = useState(page.featured_image_url);
+  const [imageAlt, setImageAlt] = useState(page.featured_image_alt ?? "");
   const [sections, setSections] = useState<EditableSection[]>(() =>
     initialSections.map(withLocalId)
   );
@@ -706,6 +721,7 @@ export function PageEditorForm({
       tiers: null, // legacy field, superseded by tiers-type sections
       meta_description: page.meta_description ?? "",
       featured_image_url: page.featured_image_url,
+      featured_image_alt: page.featured_image_alt,
       sort_order: page.sort_order,
       show_in_nav: page.show_in_nav,
     },
@@ -795,7 +811,7 @@ export function PageEditorForm({
   async function persist(values: PageInput, status?: "draft" | "published") {
     const pageResult = await savePage(
       page.id,
-      { ...values, featured_image_url: imageUrl, tiers: null },
+      { ...values, featured_image_url: imageUrl, featured_image_alt: imageAlt, tiers: null },
       status ? { status } : undefined
     );
     const sectionsResult = await saveSections(
@@ -1095,7 +1111,7 @@ export function PageEditorForm({
         <label className="mb-1 block text-sm font-medium text-neutral-700">Featured image</label>
         {imageUrl ? (
           <div className="relative mb-3 aspect-video overflow-hidden rounded-lg border border-neutral-200">
-            <Image src={imageUrl} alt="" fill className="object-cover" unoptimized />
+            <Image src={imageUrl} alt={imageAlt} fill className="object-cover" unoptimized />
           </div>
         ) : (
           <div className="mb-3 flex aspect-video items-center justify-center rounded-lg border border-dashed border-neutral-300 text-xs text-neutral-400">
@@ -1112,6 +1128,14 @@ export function PageEditorForm({
         />
         {isUploading && <p className="mt-1 text-xs text-neutral-500">Uploading…</p>}
         <p className="mt-2 text-xs text-neutral-400">JPEG, PNG or WebP, up to 5MB.</p>
+        {imageUrl && (
+          <input
+            className="mt-2 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+            placeholder="Alt text (describe the image for screen readers)"
+            value={imageAlt}
+            onChange={(e) => setImageAlt(e.target.value)}
+          />
+        )}
       </div>
     </div>
   );

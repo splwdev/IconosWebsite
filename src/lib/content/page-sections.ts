@@ -87,6 +87,7 @@ export const mediaSectionContentSchema = z
   .object({
     media_type: z.enum(MEDIA_TYPES),
     image_url: z.string().nullable(),
+    image_alt: z.string().default(""),
     video_url: z.string(),
     size: z.enum(MEDIA_SIZES),
     caption: z.string(),
@@ -99,6 +100,7 @@ export const mediaTextSectionContentSchema = z
     eyebrow: z.string().default(""),
     media_type: z.enum(MEDIA_TYPES),
     image_url: z.string().nullable(),
+    image_alt: z.string().default(""),
     video_url: z.string(),
     body: z.string(),
     layout: z.enum(MEDIA_LAYOUTS),
@@ -212,6 +214,7 @@ export function createBlankSection(type: SectionType): PageSection {
         content: {
           media_type: "image",
           image_url: null,
+          image_alt: "",
           video_url: "",
           size: "medium",
           caption: "",
@@ -225,6 +228,7 @@ export function createBlankSection(type: SectionType): PageSection {
           eyebrow: "",
           media_type: "image",
           image_url: null,
+          image_alt: "",
           video_url: "",
           body: "",
           layout: "media-left",

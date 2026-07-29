@@ -59,7 +59,7 @@ export default async function BlogPostPage({
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={post.featured_image_url}
-                alt=""
+                alt={post.featured_image_alt ?? ""}
                 className="mb-8 aspect-video w-full rounded-2xl object-cover"
               />
             )

@@ -11,6 +11,7 @@ export interface Post {
   category: string;
   status: PostStatus;
   featured_image_url: string | null;
+  featured_image_alt: string | null;
   featured_video_url: string | null;
   meta_description: string | null;
   author_id: string | null;
@@ -30,6 +31,7 @@ export const postInputSchema = z.object({
   category: z.string().min(1, "Category is required"),
   meta_description: z.string().max(160, "Keep meta descriptions under 160 characters").optional(),
   featured_image_url: z.string().url().nullable().optional(),
+  featured_image_alt: z.string().nullable().optional(),
   featured_video_url: z.string().nullable().optional(),
 });
  

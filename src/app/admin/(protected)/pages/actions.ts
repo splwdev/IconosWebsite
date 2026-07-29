@@ -123,6 +123,7 @@ export async function savePage(
     tiers: parsed.data.tiers,
     meta_description: parsed.data.meta_description || null,
     featured_image_url: parsed.data.featured_image_url ?? null,
+    featured_image_alt: parsed.data.featured_image_alt || null,
     sort_order: parsed.data.sort_order,
     show_in_nav: parsed.data.show_in_nav,
   };

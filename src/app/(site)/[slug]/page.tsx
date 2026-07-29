@@ -54,7 +54,7 @@ export default async function CustomPage({
             <div className="relative mb-10 aspect-video w-full overflow-hidden rounded-2xl">
               <Image
                 src={page.featured_image_url}
-                alt=""
+                alt={page.featured_image_alt ?? ""}
                 fill
                 unoptimized
                 className="object-cover"

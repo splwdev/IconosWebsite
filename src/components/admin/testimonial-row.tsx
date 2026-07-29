@@ -6,7 +6,7 @@ import {
   saveTestimonial,
   uploadTestimonialLogo,
   deleteTestimonial,
-} from "../../app/admin/(protected)/testimonials/actions";
+} from "@/app/admin/(protected)/testimonials/actions";
 import type { TestimonialRow as TestimonialRowType } from "@/lib/content/testimonials-schema";
  
 const inputClass =
@@ -16,6 +16,7 @@ export function TestimonialRow({ testimonial }: { testimonial: TestimonialRowTyp
   const [quote, setQuote] = useState(testimonial.quote);
   const [attribution, setAttribution] = useState(testimonial.attribution);
   const [logoUrl, setLogoUrl] = useState(testimonial.logo_url);
+  const [logoAlt, setLogoAlt] = useState(testimonial.logo_alt ?? "");
   const [isSaving, startSaving] = useTransition();
   const [isPublishing, startPublishing] = useTransition();
   const [isDeleting, startDeleting] = useTransition();
@@ -25,7 +26,8 @@ export function TestimonialRow({ testimonial }: { testimonial: TestimonialRowTyp
   const dirty =
     quote !== testimonial.quote ||
     attribution !== testimonial.attribution ||
-    logoUrl !== testimonial.logo_url;
+    logoUrl !== testimonial.logo_url ||
+    logoAlt !== (testimonial.logo_alt ?? "");
  
   function persist(status?: "draft" | "published") {
     setMessage(null);
@@ -33,7 +35,7 @@ export function TestimonialRow({ testimonial }: { testimonial: TestimonialRowTyp
     run(async () => {
       const result = await saveTestimonial(
         testimonial.id,
-        { quote, attribution, logo_url: logoUrl, sort_order: testimonial.sort_order },
+        { quote, attribution, logo_url: logoUrl, logo_alt: logoAlt, sort_order: testimonial.sort_order },
         status ? { status } : undefined
       );
       setMessage(
@@ -109,7 +111,7 @@ export function TestimonialRow({ testimonial }: { testimonial: TestimonialRowTyp
           {logoUrl ? (
             <div className="relative mb-2 flex h-16 w-full items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50 p-2">
               <div className="relative h-full w-full">
-                <Image src={logoUrl} alt="" fill unoptimized className="object-contain" />
+                <Image src={logoUrl} alt={logoAlt} fill unoptimized className="object-contain" />
               </div>
             </div>
           ) : (
@@ -139,6 +141,14 @@ export function TestimonialRow({ testimonial }: { testimonial: TestimonialRowTyp
             )}
           </div>
           {isUploading && <p className="mt-1 text-xs text-neutral-500">Uploading…</p>}
+          {logoUrl && (
+            <input
+              className={`${inputClass} mt-2`}
+              placeholder="e.g. Acme Ltd logo"
+              value={logoAlt}
+              onChange={(e) => setLogoAlt(e.target.value)}
+            />
+          )}
         </div>
       </div>
  

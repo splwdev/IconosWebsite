@@ -54,7 +54,7 @@ export default async function ServicePage({
             <div className="relative mb-10 aspect-video w-full overflow-hidden rounded-2xl">
               <Image
                 src={service.featured_image_url}
-                alt=""
+                alt={service.featured_image_alt ?? ""}
                 fill
                 unoptimized
                 className="object-cover"

@@ -72,6 +72,7 @@ export async function savePost(
     category: parsed.data.category,
     meta_description: parsed.data.meta_description || null,
     featured_image_url: parsed.data.featured_image_url ?? null,
+    featured_image_alt: parsed.data.featured_image_alt || null,
     featured_video_url: parsed.data.featured_video_url || null,
   };
  

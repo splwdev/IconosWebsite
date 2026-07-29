@@ -43,6 +43,7 @@ export function PostEditorForm({ post }: { post: Post }) {
       category: post.category,
       meta_description: post.meta_description ?? "",
       featured_image_url: post.featured_image_url,
+      featured_image_alt: post.featured_image_alt ?? "",
       featured_video_url: post.featured_video_url ?? "",
     },
   });
@@ -261,7 +262,13 @@ export function PostEditorForm({ post }: { post: Post }) {
         <label className="mb-1 block text-sm font-medium text-neutral-700">Featured image</label>
         {imageUrl ? (
           <div className="relative mb-3 aspect-video overflow-hidden rounded-lg border border-neutral-200">
-            <Image src={imageUrl} alt="" fill className="object-cover" unoptimized />
+            <Image
+              src={imageUrl}
+              alt={watch("featured_image_alt") || ""}
+              fill
+              className="object-cover"
+              unoptimized
+            />
           </div>
         ) : (
           <div className="mb-3 flex aspect-video items-center justify-center rounded-lg border border-dashed border-neutral-300 text-xs text-neutral-400">
@@ -277,6 +284,13 @@ export function PostEditorForm({ post }: { post: Post }) {
           disabled={isUploading}
         />
         {isUploading && <p className="mt-1 text-xs text-neutral-500">Uploading…</p>}
+        {imageUrl && (
+          <input
+            className={`${inputClass} mt-2`}
+            placeholder="Alt text (describe the image for screen readers)"
+            {...register("featured_image_alt")}
+          />
+        )}
         <p className="mt-2 text-xs text-neutral-400">JPEG, PNG or WebP, up to 5MB.</p>
  
         <div className="mt-6">
