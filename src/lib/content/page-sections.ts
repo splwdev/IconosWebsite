@@ -3,6 +3,7 @@ import { tierSchema } from "./pages";
 import { isValidYouTubeUrl } from "./youtube";
  
 export const SECTION_TYPES = [
+  "hero",
   "text",
   "media",
   "media_text",
@@ -12,10 +13,13 @@ export const SECTION_TYPES = [
   "programs_highlight",
   "testimonials",
   "blog_teaser",
+  "issues",
+  "features",
 ] as const;
 export type SectionType = (typeof SECTION_TYPES)[number];
  
 export const SECTION_TYPE_LABELS: Record<SectionType, string> = {
+  hero: "Hero",
   text: "Text",
   media: "Media",
   media_text: "Media + Text",
@@ -25,6 +29,8 @@ export const SECTION_TYPE_LABELS: Record<SectionType, string> = {
   programs_highlight: "Programs Highlight",
   testimonials: "Testimonials",
   blog_teaser: "Blog Teaser",
+  issues: "Issues We Resolve",
+  features: "Feature Columns",
 };
  
 // These four render live data (published services/programs, testimonials,
@@ -52,6 +58,36 @@ export type SectionBackground = (typeof SECTION_BACKGROUNDS)[number];
  
 export const CTA_STYLES = ["light", "dark"] as const;
 export type CtaStyle = (typeof CTA_STYLES)[number];
+
+export const FEATURE_STYLES = ["light", "dark"] as const;
+export type FeatureStyle = (typeof FEATURE_STYLES)[number];
+
+/**
+ * Links typed by staff into section fields end up in an <a href>. React does
+ * not block `javascript:` URLs, so only site-relative paths, https, mailto
+ * and tel are accepted. Protocol-relative ("//evil.com") is rejected too.
+ */
+export function isSafeHref(href: string): boolean {
+  if (href.startsWith("/")) return !href.startsWith("//");
+  return /^(https:\/\/|mailto:|tel:)/i.test(href);
+}
+
+const href = z
+  .string()
+  .min(1, "Required")
+  .refine(isSafeHref, "Links must start with /, https://, mailto: or tel:");
+
+/** List of short strings: trims each and drops blanks (admin edits these one per line). */
+const lineList = z
+  .array(z.string())
+  .default([])
+  .transform((items) => items.map((i) => i.trim()).filter((i) => i.length > 0));
+
+/** Optional link: empty string means "no link", anything else must be safe. */
+const optionalHref = z
+  .string()
+  .default("")
+  .refine((v) => v === "" || isSafeHref(v), "Links must start with /, https://, mailto: or tel:");
  
 // eyebrow defaults to "" so existing rows saved before this field existed
 // (nothing in the live DB predates it except a handful of text sections)
@@ -104,6 +140,8 @@ export const mediaTextSectionContentSchema = z
     video_url: z.string(),
     body: z.string(),
     layout: z.enum(MEDIA_LAYOUTS),
+    button_label: z.string().default(""),
+    button_href: optionalHref,
   })
   .superRefine(checkMediaFields);
 export type MediaTextSectionContent = z.infer<typeof mediaTextSectionContentSchema>;
@@ -117,9 +155,9 @@ export const ctaSectionContentSchema = z.object({
   body: z.string(),
   style: z.enum(CTA_STYLES).default("dark"),
   button_label: z.string().min(1, "Required"),
-  button_href: z.string().min(1, "Required"),
+  button_href: href,
   secondary_button_label: z.string().default(""),
-  secondary_button_href: z.string().default(""),
+  secondary_button_href: optionalHref,
 });
 export type CtaSectionContent = z.infer<typeof ctaSectionContentSchema>;
  
@@ -144,6 +182,8 @@ export type ProgramsHighlightSectionContent = z.infer<typeof programsHighlightSe
 export const testimonialsSectionContentSchema = z.object({
   eyebrow: z.string().default(""),
   heading: z.string().default(""),
+  button_label: z.string().default(""),
+  button_href: optionalHref,
 });
 export type TestimonialsSectionContent = z.infer<typeof testimonialsSectionContentSchema>;
  
@@ -152,8 +192,83 @@ export const blogTeaserSectionContentSchema = z.object({
   heading: z.string().default(""),
 });
 export type BlogTeaserSectionContent = z.infer<typeof blogTeaserSectionContentSchema>;
+
+// ---------------------------------------------------------------------------
+// Homepage redesign (October 2026 mockup) section types. All plain-text
+// fields — rendered as React text, so no sanitisation needed — plus
+// validated links.
+// ---------------------------------------------------------------------------
+
+export const heroCardSchema = z.object({
+  eyebrow: z.string().default(""),
+  title: z.string().min(1, "Card title is required"),
+  summary: z.string().default(""),
+  points: lineList,
+  button_label: z.string().default("Learn more"),
+  button_href: optionalHref,
+  /** Spans the full width of the card grid (e.g. "Data protection training"). */
+  wide: z.boolean().default(false),
+});
+export type HeroCard = z.infer<typeof heroCardSchema>;
+
+export const heroSectionContentSchema = z.object({
+  heading: z.string().min(1, "Required"),
+  lead: z.string().default(""),
+  image_url: z.string().nullable().default(null),
+  image_alt: z.string().default(""),
+  cards: z.array(heroCardSchema).default([]),
+  footnote: z.string().default(""),
+  footnote_link_label: z.string().default(""),
+  footnote_link_href: optionalHref,
+});
+export type HeroSectionContent = z.infer<typeof heroSectionContentSchema>;
+
+export const issuesSectionContentSchema = z.object({
+  eyebrow: z.string().default(""),
+  heading: z.string().default(""),
+  image_url: z.string().nullable().default(null),
+  image_alt: z.string().default(""),
+  /** Dark chips — e.g. commercial/contract issues. */
+  primary_items: lineList,
+  /** Light chips — e.g. data protection issues. */
+  secondary_items: lineList,
+  tagline: z.string().default(""),
+  button_label: z.string().default(""),
+  button_href: optionalHref,
+});
+export type IssuesSectionContent = z.infer<typeof issuesSectionContentSchema>;
+
+export const featureItemSchema = z.object({
+  title: z.string().min(1, "Required"),
+  body: z.string().default(""),
+});
+export type FeatureItem = z.infer<typeof featureItemSchema>;
+
+export const featuresSectionContentSchema = z.object({
+  eyebrow: z.string().default(""),
+  heading: z.string().default(""),
+  intro: z.string().default(""),
+  style: z.enum(FEATURE_STYLES).default("dark"),
+  items: z.array(featureItemSchema).default([]),
+});
+export type FeaturesSectionContent = z.infer<typeof featuresSectionContentSchema>;
  
 export const pageSectionSchema = z.discriminatedUnion("section_type", [
+  z.object({
+    section_type: z.literal("hero"),
+    background: z.enum(SECTION_BACKGROUNDS),
+    content: heroSectionContentSchema,
+  }),
+  z.object({
+    section_type: z.literal("issues"),
+    background: z.enum(SECTION_BACKGROUNDS),
+    content: issuesSectionContentSchema,
+  }),
+  z.object({
+    section_type: z.literal("features"),
+    background: z.enum(SECTION_BACKGROUNDS),
+    content: featuresSectionContentSchema,
+  }),
   z.object({
     section_type: z.literal("text"),
     background: z.enum(SECTION_BACKGROUNDS),
@@ -232,6 +347,8 @@ export function createBlankSection(type: SectionType): PageSection {
           video_url: "",
           body: "",
           layout: "media-left",
+          button_label: "",
+          button_href: "",
         },
       };
     case "cta":
@@ -267,13 +384,50 @@ export function createBlankSection(type: SectionType): PageSection {
       return {
         section_type: "testimonials",
         background: "none",
-        content: { eyebrow: "", heading: "" },
+        content: { eyebrow: "", heading: "", button_label: "", button_href: "" },
       };
     case "blog_teaser":
       return {
         section_type: "blog_teaser",
         background: "none",
         content: { eyebrow: "", heading: "" },
+      };
+    case "hero":
+      return {
+        section_type: "hero",
+        background: "tint",
+        content: {
+          heading: "",
+          lead: "",
+          image_url: null,
+          image_alt: "",
+          cards: [],
+          footnote: "",
+          footnote_link_label: "",
+          footnote_link_href: "",
+        },
+      };
+    case "issues":
+      return {
+        section_type: "issues",
+        background: "none",
+        content: {
+          eyebrow: "",
+          heading: "",
+          image_url: null,
+          image_alt: "",
+          primary_items: [],
+          secondary_items: [],
+          tagline: "",
+          button_label: "",
+          button_href: "",
+        },
+      };
+    case "features":
+      return {
+        section_type: "features",
+        background: "none",
+        content: { eyebrow: "", heading: "", intro: "", style: "dark", items: [] },
       };
   }
 }

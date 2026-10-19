@@ -33,6 +33,7 @@ import {
   MEDIA_SIZES,
   MEDIA_LAYOUTS,
   CTA_STYLES,
+  FEATURE_STYLES,
   createBlankSection,
   type PageSection,
   type SectionType,
@@ -45,6 +46,10 @@ import {
   type ProgramsHighlightSectionContent,
   type TestimonialsSectionContent,
   type BlogTeaserSectionContent,
+  type HeroSectionContent,
+  type HeroCard,
+  type IssuesSectionContent,
+  type FeaturesSectionContent,
 } from "@/lib/content/page-sections";
 import { isValidYouTubeUrl } from "@/lib/content/youtube";
 import { generateMetaDescription } from "@/lib/content/generate-meta-description";
@@ -304,6 +309,13 @@ function MediaTextSectionFields({
         content={content.body}
         onChange={(html) => onChange({ ...content, body: html })}
       />
+      <LinkFields
+        label={content.button_label}
+        href={content.button_href}
+        placeholder="/who-we-are"
+        onLabelChange={(button_label) => onChange({ ...content, button_label })}
+        onHrefChange={(button_href) => onChange({ ...content, button_href })}
+      />
     </div>
   );
 }
@@ -507,6 +519,395 @@ function SmartSectionFields<T extends { eyebrow: string; heading: string }>({
   );
 }
  
+
+// ---------------------------------------------------------------------------
+// Homepage redesign section fields (hero, issues, features)
+// ---------------------------------------------------------------------------
+
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium text-neutral-600">
+        {label} {hint && <span className="font-normal text-neutral-400">({hint})</span>}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+/** Edits a string[] as one item per line — simplest UI for non-technical editors. */
+function LinesField({
+  label,
+  hint = "one per line",
+  value,
+  onChange,
+  rows = 3,
+}: {
+  label: string;
+  hint?: string;
+  value: string[];
+  onChange: (value: string[]) => void;
+  rows?: number;
+}) {
+  return (
+    <Field label={label} hint={hint}>
+      <textarea
+        rows={rows}
+        className={inputClass}
+        value={value.join("\n")}
+        // Keep blank lines while typing; they're dropped on render and save.
+        onChange={(e) => onChange(e.target.value.split("\n"))}
+      />
+    </Field>
+  );
+}
+
+function ImageUploadField({
+  imageUrl,
+  imageAlt,
+  uploading,
+  onImageFile,
+  onAltChange,
+  onRemove,
+}: {
+  imageUrl: string | null;
+  imageAlt: string;
+  uploading: boolean;
+  onImageFile: (file: File) => void;
+  onAltChange: (alt: string) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div>
+      <span className="mb-1 block text-xs font-medium text-neutral-600">Image</span>
+      {imageUrl ? (
+        <div className="relative mb-2 aspect-video overflow-hidden rounded-lg border border-neutral-200">
+          <Image src={imageUrl} alt={imageAlt} fill className="object-cover" unoptimized />
+        </div>
+      ) : (
+        <div className="mb-2 flex aspect-video items-center justify-center rounded-lg border border-dashed border-neutral-300 text-xs text-neutral-400">
+          No image — the brand circle placeholder is shown
+        </div>
+      )}
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        disabled={uploading}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onImageFile(file);
+        }}
+        className="text-xs"
+      />
+      {uploading && <p className="mt-1 text-xs text-neutral-500">Uploading…</p>}
+      {imageUrl && (
+        <div className="mt-2 flex gap-2">
+          <input
+            className={inputClass}
+            placeholder="Alt text — leave empty if the image is purely decorative"
+            value={imageAlt}
+            onChange={(e) => onAltChange(e.target.value)}
+          />
+          <button type="button" onClick={onRemove} className="text-xs font-medium text-red-600">
+            Remove
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LinkFields({
+  label,
+  href,
+  onLabelChange,
+  onHrefChange,
+  placeholder = "/contact",
+}: {
+  label: string;
+  href: string;
+  onLabelChange: (value: string) => void;
+  onHrefChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <Field label="Button label" hint="optional">
+        <input className={inputClass} value={label} onChange={(e) => onLabelChange(e.target.value)} />
+      </Field>
+      <Field label="Button link">
+        <input
+          className={inputClass}
+          placeholder={placeholder}
+          value={href}
+          onChange={(e) => onHrefChange(e.target.value)}
+        />
+      </Field>
+    </div>
+  );
+}
+
+const BLANK_HERO_CARD: HeroCard = {
+  eyebrow: "",
+  title: "",
+  summary: "",
+  points: [],
+  button_label: "Learn more",
+  button_href: "",
+  wide: false,
+};
+
+function HeroSectionFields({
+  content,
+  onChange,
+  uploading,
+  onImageFile,
+}: {
+  content: HeroSectionContent;
+  onChange: (content: HeroSectionContent) => void;
+  uploading: boolean;
+  onImageFile: (file: File) => void;
+}) {
+  function updateCard(index: number, card: HeroCard) {
+    onChange({ ...content, cards: content.cards.map((c, i) => (i === index ? card : c)) });
+  }
+  function moveCard(index: number, delta: -1 | 1) {
+    const target = index + delta;
+    if (target < 0 || target >= content.cards.length) return;
+    onChange({ ...content, cards: arrayMove(content.cards, index, target) });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-3">
+          <Field label="Heading" hint="the page's main H1">
+            <textarea
+              rows={2}
+              className={inputClass}
+              value={content.heading}
+              onChange={(e) => onChange({ ...content, heading: e.target.value })}
+            />
+          </Field>
+          <Field label="Intro text" hint="optional">
+            <textarea
+              rows={3}
+              className={inputClass}
+              value={content.lead}
+              onChange={(e) => onChange({ ...content, lead: e.target.value })}
+            />
+          </Field>
+        </div>
+        <ImageUploadField
+          imageUrl={content.image_url}
+          imageAlt={content.image_alt}
+          uploading={uploading}
+          onImageFile={onImageFile}
+          onAltChange={(image_alt) => onChange({ ...content, image_alt })}
+          onRemove={() => onChange({ ...content, image_url: null, image_alt: "" })}
+        />
+      </div>
+
+      <div>
+        <span className="mb-2 block text-xs font-medium text-neutral-600">Service cards</span>
+        <div className="space-y-3">
+          {content.cards.map((card, index) => (
+            <div key={index} className="space-y-3 rounded-lg border border-neutral-200 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-neutral-500">Card {index + 1}</span>
+                <div className="flex items-center gap-3 text-xs">
+                  <label className="flex items-center gap-1.5 text-neutral-600">
+                    <input
+                      type="checkbox"
+                      checked={card.wide}
+                      onChange={(e) => updateCard(index, { ...card, wide: e.target.checked })}
+                    />
+                    Full width
+                  </label>
+                  <button type="button" onClick={() => moveCard(index, -1)} className="text-neutral-500" aria-label={`Move card ${index + 1} up`}>
+                    ↑
+                  </button>
+                  <button type="button" onClick={() => moveCard(index, 1)} className="text-neutral-500" aria-label={`Move card ${index + 1} down`}>
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onChange({ ...content, cards: content.cards.filter((_, i) => i !== index) })}
+                    className="font-medium text-red-600"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field label="Label" hint="e.g. Subscription">
+                  <input className={inputClass} value={card.eyebrow} onChange={(e) => updateCard(index, { ...card, eyebrow: e.target.value })} />
+                </Field>
+                <Field label="Title">
+                  <input className={inputClass} value={card.title} onChange={(e) => updateCard(index, { ...card, title: e.target.value })} />
+                </Field>
+              </div>
+              <Field label="Summary" hint="optional">
+                <textarea rows={2} className={inputClass} value={card.summary} onChange={(e) => updateCard(index, { ...card, summary: e.target.value })} />
+              </Field>
+              <LinesField label="Bullet points" value={card.points} onChange={(points) => updateCard(index, { ...card, points })} rows={2} />
+              <LinkFields
+                label={card.button_label}
+                href={card.button_href}
+                placeholder="/how-we-work/subscription-model"
+                onLabelChange={(button_label) => updateCard(index, { ...card, button_label })}
+                onHrefChange={(button_href) => updateCard(index, { ...card, button_href })}
+              />
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => onChange({ ...content, cards: [...content.cards, { ...BLANK_HERO_CARD }] })}
+          className="mt-2 text-xs font-medium text-neutral-600 underline"
+        >
+          + Add card
+        </button>
+      </div>
+
+      <div className="space-y-3 rounded-lg bg-neutral-50 p-3">
+        <Field label="Footnote" hint="optional, centred under the cards">
+          <input className={inputClass} value={content.footnote} onChange={(e) => onChange({ ...content, footnote: e.target.value })} />
+        </Field>
+        <LinkFields
+          label={content.footnote_link_label}
+          href={content.footnote_link_href}
+          placeholder="/how-we-work/ad-hoc-work"
+          onLabelChange={(footnote_link_label) => onChange({ ...content, footnote_link_label })}
+          onHrefChange={(footnote_link_href) => onChange({ ...content, footnote_link_href })}
+        />
+      </div>
+    </div>
+  );
+}
+
+function IssuesSectionFields({
+  content,
+  onChange,
+  uploading,
+  onImageFile,
+}: {
+  content: IssuesSectionContent;
+  onChange: (content: IssuesSectionContent) => void;
+  uploading: boolean;
+  onImageFile: (file: File) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-3">
+          <EyebrowField value={content.eyebrow} onChange={(eyebrow) => onChange({ ...content, eyebrow })} />
+          <Field label="Heading">
+            <input className={inputClass} value={content.heading} onChange={(e) => onChange({ ...content, heading: e.target.value })} />
+          </Field>
+        </div>
+        <ImageUploadField
+          imageUrl={content.image_url}
+          imageAlt={content.image_alt}
+          uploading={uploading}
+          onImageFile={onImageFile}
+          onAltChange={(image_alt) => onChange({ ...content, image_alt })}
+          onRemove={() => onChange({ ...content, image_url: null, image_alt: "" })}
+        />
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <LinesField label="Dark chips" hint="one per line — e.g. contract issues" value={content.primary_items} onChange={(primary_items) => onChange({ ...content, primary_items })} />
+        <LinesField label="Light chips" hint="one per line — e.g. data protection issues" value={content.secondary_items} onChange={(secondary_items) => onChange({ ...content, secondary_items })} />
+      </div>
+      <Field label="Tagline" hint="optional, bold line under the chips">
+        <input className={inputClass} value={content.tagline} onChange={(e) => onChange({ ...content, tagline: e.target.value })} />
+      </Field>
+      <LinkFields
+        label={content.button_label}
+        href={content.button_href}
+        onLabelChange={(button_label) => onChange({ ...content, button_label })}
+        onHrefChange={(button_href) => onChange({ ...content, button_href })}
+      />
+    </div>
+  );
+}
+
+function FeaturesSectionFields({
+  content,
+  onChange,
+}: {
+  content: FeaturesSectionContent;
+  onChange: (content: FeaturesSectionContent) => void;
+}) {
+  function updateItem(index: number, field: "title" | "body", value: string) {
+    onChange({ ...content, items: content.items.map((it, i) => (i === index ? { ...it, [field]: value } : it)) });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <span className="mb-1 block text-xs font-medium text-neutral-600">Style</span>
+        <div className="flex gap-2">
+          {FEATURE_STYLES.map((style) => (
+            <button
+              key={style}
+              type="button"
+              onClick={() => onChange({ ...content, style })}
+              className={`rounded-lg border px-3 py-1.5 text-xs font-medium capitalize ${
+                content.style === style
+                  ? "border-neutral-900 bg-neutral-900 text-white"
+                  : "border-neutral-300 text-neutral-600"
+              }`}
+            >
+              {style}
+            </button>
+          ))}
+        </div>
+      </div>
+      <EyebrowField value={content.eyebrow} onChange={(eyebrow) => onChange({ ...content, eyebrow })} />
+      <Field label="Heading">
+        <input className={inputClass} value={content.heading} onChange={(e) => onChange({ ...content, heading: e.target.value })} />
+      </Field>
+      <Field label="Intro text" hint="optional">
+        <input className={inputClass} value={content.intro} onChange={(e) => onChange({ ...content, intro: e.target.value })} />
+      </Field>
+      <div className="space-y-2">
+        <span className="block text-xs font-medium text-neutral-600">Columns <span className="font-normal text-neutral-400">(four fit best)</span></span>
+        {content.items.map((item, index) => (
+          <div key={index} className="flex gap-2 rounded-lg border border-neutral-200 p-3">
+            <div className="flex-1 space-y-2">
+              <input className={inputClass} placeholder="Title" value={item.title} onChange={(e) => updateItem(index, "title", e.target.value)} />
+              <textarea rows={2} className={inputClass} placeholder="Short description" value={item.body} onChange={(e) => updateItem(index, "body", e.target.value)} />
+            </div>
+            <button
+              type="button"
+              onClick={() => onChange({ ...content, items: content.items.filter((_, i) => i !== index) })}
+              className="self-start text-xs font-medium text-red-600"
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => onChange({ ...content, items: [...content.items, { title: "", body: "" }] })}
+          className="text-xs font-medium text-neutral-600 underline"
+        >
+          + Add column
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Sortable card wrapper
 // ---------------------------------------------------------------------------
@@ -656,7 +1057,42 @@ function SectionCard({
         />
       )}
       {section.section_type === "testimonials" && (
-        <SmartSectionFields<TestimonialsSectionContent>
+        <div className="space-y-3">
+          <SmartSectionFields<TestimonialsSectionContent>
+            content={section.content}
+            onChange={(content) => onChange({ ...section, content } as PageSection)}
+          />
+          <LinkFields
+            label={section.content.button_label}
+            href={section.content.button_href}
+            placeholder="/clients"
+            onLabelChange={(button_label) =>
+              onChange({ ...section, content: { ...section.content, button_label } } as PageSection)
+            }
+            onHrefChange={(button_href) =>
+              onChange({ ...section, content: { ...section.content, button_href } } as PageSection)
+            }
+          />
+        </div>
+      )}
+      {section.section_type === "hero" && (
+        <HeroSectionFields
+          content={section.content}
+          onChange={(content) => onChange({ ...section, content } as PageSection)}
+          uploading={uploading}
+          onImageFile={onImageFile}
+        />
+      )}
+      {section.section_type === "issues" && (
+        <IssuesSectionFields
+          content={section.content}
+          onChange={(content) => onChange({ ...section, content } as PageSection)}
+          uploading={uploading}
+          onImageFile={onImageFile}
+        />
+      )}
+      {section.section_type === "features" && (
+        <FeaturesSectionFields
           content={section.content}
           onChange={(content) => onChange({ ...section, content } as PageSection)}
         />
@@ -795,6 +1231,12 @@ export function PageEditorForm({
             if (s.section_type === "media_text") {
               return { ...s, content: { ...s.content, image_url: uploadedUrl } };
             }
+            if (s.section_type === "hero") {
+              return { ...s, content: { ...s.content, image_url: uploadedUrl } };
+            }
+            if (s.section_type === "issues") {
+              return { ...s, content: { ...s.content, image_url: uploadedUrl } };
+            }
             return s;
           })
         );
@@ -876,6 +1318,12 @@ export function PageEditorForm({
             return `${s.content.heading} ${s.content.body}`;
           case "tiers":
             return s.content.tiers.map((t) => `${t.name} ${t.description}`).join(" ");
+          case "hero":
+            return `${s.content.heading} ${s.content.lead}`;
+          case "issues":
+            return [s.content.heading, ...s.content.primary_items, ...s.content.secondary_items].join(" ");
+          case "features":
+            return [s.content.heading, s.content.intro, ...s.content.items.map((i) => `${i.title} ${i.body}`)].join(" ");
           default:
             return "";
         }

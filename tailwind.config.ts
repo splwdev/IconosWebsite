@@ -5,6 +5,15 @@ import typography from "@tailwindcss/typography";
 // that src/lib/theme writes onto <html> at request time, based on whichever
 // theme row is currently published (or being previewed by an admin).
 // This is what makes the admin "switch theme" feature work without a rebuild.
+//
+// The variables hold hex values, so Tailwind can't apply opacity modifiers
+// (`text-brand-dark/75`) to them directly — those classes silently fell back
+// to full-strength colour. color-mix() with Tailwind's <alpha-value>
+// placeholder makes the modifiers work; with no modifier, alpha is 1 and the
+// colour is unchanged.
+const themeColor = (cssVar: string) =>
+  `color-mix(in srgb, var(${cssVar}) calc(<alpha-value> * 100%), transparent)`;
+
 const config: Config = {
   darkMode: "class",
   content: ["./src/**/*.{ts,tsx}"],
@@ -12,12 +21,13 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          dark: "var(--color-dark)",
-          darker: "var(--color-darker)",
-          cream: "var(--color-cream)",
-          tint: "var(--color-tint)",
-          accent: "var(--color-accent)",
-          "accent-soft": "var(--color-accent-soft)",
+          dark: themeColor("--color-dark"),
+          darker: themeColor("--color-darker"),
+          cream: themeColor("--color-cream"),
+          // --color-tint is never set by css-vars.ts; fall back to cream.
+          tint: themeColor("--color-tint, var(--color-cream)"),
+          accent: themeColor("--color-accent"),
+          "accent-soft": themeColor("--color-accent-soft"),
         },
       },
       fontFamily: {

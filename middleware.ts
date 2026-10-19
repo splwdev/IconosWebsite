@@ -18,7 +18,7 @@ export async function middleware(request: NextRequest) {
     font-src 'self' https://fonts.gstatic.com;
     img-src 'self' data: https://*.supabase.co;
     connect-src 'self' https://*.supabase.co;
-    frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com;
+    frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://cdn.yoshki.com;
     frame-ancestors 'none';
     base-uri 'self';
     form-action 'self';

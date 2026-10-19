@@ -40,7 +40,7 @@ export default async function HomePage() {
   const sections = await getPageSections(home.id);
  
   return (
-    <Container className="py-16">
+    <Container className="pb-8 pt-6 sm:pt-10">
       <PageSectionsRenderer sections={sections} />
     </Container>
   );
