@@ -14,7 +14,7 @@ export function SiteHeader({ nav }: { nav: Array<NavLink | NavGroup> }) {
  
   return (
     <header className="relative z-40 border-b border-black/5 bg-white">
-      <Container className="flex items-center justify-between py-4">
+      <Container className="flex items-center justify-between gap-6 py-3">
         <Link href="/" className="flex-shrink-0">
           <Image
             src="/logo.png"
@@ -22,7 +22,7 @@ export function SiteHeader({ nav }: { nav: Array<NavLink | NavGroup> }) {
             width={192}
             height={142}
             priority
-            className="h-20 w-auto"
+            className="h-14 w-auto"
           />
         </Link>
  
@@ -41,7 +41,7 @@ export function SiteHeader({ nav }: { nav: Array<NavLink | NavGroup> }) {
  
         <Link
           href="/contact"
-          className="hidden rounded-brand bg-brand-dark px-6 py-2.5 text-sm font-semibold text-white md:inline-block"
+          className="hidden rounded-brand bg-brand-dark px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-darker md:inline-block"
         >
           Contact us
         </Link>

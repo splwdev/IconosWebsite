@@ -22,9 +22,10 @@ export function buildPrimaryNav(
   customLinks: NavLink[] = []
 ): Array<NavLink | NavGroup> {
   return [
-    { label: "Who We Are", href: "/who-we-are" },
-    { label: "What We Do", href: "/what-we-do", children: whatWeDoChildren },
+    // Order follows the approved homepage mockup (Oct 2026).
     { label: "How We Work", href: "/how-we-work", children: howWeWorkChildren },
+    { label: "What We Do", href: "/what-we-do", children: whatWeDoChildren },
+    { label: "Who We Are", href: "/who-we-are" },
     { label: "Clients", href: "/clients" },
     { label: "Work With Us", href: "/work-with-us" },
     { label: "Blog", href: "/blog" },

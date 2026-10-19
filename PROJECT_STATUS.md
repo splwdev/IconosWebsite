@@ -46,6 +46,22 @@ deployed).
   see `0004_fix_staff_users_recursion.sql`).
 - **Real logo** integrated in header/footer (`public/logo.png`).
 
+## Homepage redesign (Oct 2026) — branch `homepage-redesign`
+Homepage rebuilt to the client-approved mockup inside the existing
+page-sections system (still fully editable in /admin/pages → Homepage).
+- New section types: `hero` (H1 + image + service cards + footnote link),
+  `issues` (image + dark/light issue chips), `features` (dark value columns).
+- Media + Text and Testimonials sections gained an optional button.
+- All staff-entered links are validated (`isSafeHref`): only `/…`,
+  `https://`, `mailto:`, `tel:` — blocks `javascript:` links.
+- Tailwind brand colours now support opacity modifiers (`/75`); before
+  this they silently rendered at full strength.
+- Star ratings removed from testimonial cards (implied reviews that don't
+  exist). SRA badge slot added to footer (`NEXT_PUBLIC_SRA_BADGE_URL`).
+- **Migration `0020_homepage_redesign.sql` is NOT applied yet.** Deploy the
+  code first, then apply it — older code skips the new section types.
+- After applying: upload hero, issues and founder images in admin.
+
 ## Outstanding / backlog, roughly in priority order
 1. **Header nav**: dropdowns should reveal on hover, not require a click —
    keep keyboard/touch accessibility (currently uses `<details>/<summary>`
