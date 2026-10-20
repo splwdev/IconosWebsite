@@ -1,11 +1,11 @@
-import { Check, Minus } from "lucide-react";
+import { Check, X } from "lucide-react";
 import type { ComparisonSectionContent } from "@/lib/content/page-sections";
 import { SectionEyebrow, SectionTitle, mutedText } from "./section-primitives";
 
 /**
  * Two options side by side; the right-hand column is the highlighted one
  * (e.g. "An in-house hire" vs "Iconos Managed Legal Services"). The column
- * titles carry the meaning, so the minus/check icons are decorative.
+ * titles carry the meaning, so the cross/check icons are decorative.
  */
 export function ComparisonSection({ content }: { content: ComparisonSectionContent }) {
   const { eyebrow, heading, left, right } = content;
@@ -26,7 +26,7 @@ export function ComparisonSection({ content }: { content: ComparisonSectionConte
                   aria-hidden
                   className="mt-[0.2em] inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-brand-dark/40"
                 >
-                  <Minus className="h-2.5 w-2.5" strokeWidth={3} />
+                  <X className="h-2.5 w-2.5" strokeWidth={3} />
                 </span>
                 {item}
               </li>
