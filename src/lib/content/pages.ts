@@ -73,6 +73,8 @@ export const pageInputSchema = z
     summary: z.string().min(1, "Summary is required"),
     /** Optional header paragraph; when empty the page header shows the summary. */
     intro: z.string().nullable().default(null),
+    /** Optional H1; when empty the page header shows the title (title stays the nav/card label). */
+    heading: z.string().nullable().default(null),
     body: z.string(),
     tiers: z.array(tierSchema).nullable(),
     meta_description: z.string().nullable(),
@@ -175,6 +177,8 @@ export interface Page {
   summary: string;
   /** Header paragraph for service/program pages; null → use summary. Added in 0023. */
   intro?: string | null;
+  /** H1 override for service/program pages; null → use title. Added in 0025. */
+  heading?: string | null;
   body: string;
   tiers: PageTier[] | null;
   meta_description: string | null;

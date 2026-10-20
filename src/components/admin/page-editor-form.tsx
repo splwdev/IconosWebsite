@@ -1036,6 +1036,38 @@ function StepsSectionFields({
           + Add card
         </button>
       </div>
+      <div className="space-y-2 rounded-lg bg-neutral-900 p-3 text-white">
+        <span className="block text-xs font-semibold text-neutral-300">
+          Highlighted final card <span className="font-normal text-neutral-400">(optional — dark card at the end, e.g. &ldquo;Need help with something else?&rdquo;)</span>
+        </span>
+        <input
+          className={`${inputClass} text-neutral-900`}
+          placeholder="Title"
+          value={content.final_card.title}
+          onChange={(e) => onChange({ ...content, final_card: { ...content.final_card, title: e.target.value } })}
+        />
+        <textarea
+          rows={2}
+          className={`${inputClass} text-neutral-900`}
+          placeholder="Short text"
+          value={content.final_card.body}
+          onChange={(e) => onChange({ ...content, final_card: { ...content.final_card, body: e.target.value } })}
+        />
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <input
+            className={`${inputClass} text-neutral-900`}
+            placeholder="Link label, e.g. Get in touch"
+            value={content.final_card.link_label}
+            onChange={(e) => onChange({ ...content, final_card: { ...content.final_card, link_label: e.target.value } })}
+          />
+          <input
+            className={`${inputClass} text-neutral-900`}
+            placeholder="/contact"
+            value={content.final_card.link_href}
+            onChange={(e) => onChange({ ...content, final_card: { ...content.final_card, link_href: e.target.value } })}
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -1154,6 +1186,9 @@ function TestimonialSpotlightSectionFields({
           />
         </Field>
       )}
+      <Field label="Heading beside the testimonial" hint="optional, e.g. Need legal support regularly?">
+        <input className={inputClass} value={content.heading} onChange={(e) => onChange({ ...content, heading: e.target.value })} />
+      </Field>
       <Field label="Text beside the testimonial" hint="optional, shown above the button">
         <textarea rows={2} className={inputClass} value={content.text} onChange={(e) => onChange({ ...content, text: e.target.value })} />
       </Field>
@@ -1538,6 +1573,7 @@ export function PageEditorForm({
       tag: page.tag ?? "",
       summary: page.summary,
       intro: page.intro ?? "",
+      heading: page.heading ?? "",
       body: page.body, // legacy field, no longer editable — see PROJECT_STATUS
       tiers: null, // legacy field, superseded by tiers-type sections
       meta_description: page.meta_description ?? "",
@@ -1823,6 +1859,18 @@ export function PageEditorForm({
             {errors.summary && (
               <p className="mt-1 text-xs text-red-600">{errors.summary.message}</p>
             )}
+          </div>
+        )}
+
+        {(page.page_type === "program" || page.page_type === "service") && (
+          <div>
+            <label className="mb-1 block text-sm font-medium text-neutral-700">
+              Page heading{" "}
+              <span className="font-normal text-neutral-400">
+                (optional — the H1 on this page; leave blank to use the title, which stays the label in the nav and on cards)
+              </span>
+            </label>
+            <input className={inputClass} {...register("heading")} />
           </div>
         )}
 

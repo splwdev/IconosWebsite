@@ -122,6 +122,7 @@ export async function savePage(
     tag: parsed.data.tag || null,
     summary: parsed.data.summary,
     intro: parsed.data.intro?.trim() || null,
+    heading: parsed.data.heading?.trim() || null,
     body: sanitizePostBody(parsed.data.body),
     tiers: parsed.data.tiers,
     meta_description: parsed.data.meta_description || null,

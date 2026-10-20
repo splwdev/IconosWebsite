@@ -9,6 +9,7 @@ const overview: PageInput = {
   tag: "How we work",
   summary: "Our subscriptions offer one predictable monthly cost.",
   intro: null,
+  heading: null,
   body: "",
   tiers: null,
   meta_description: null,
