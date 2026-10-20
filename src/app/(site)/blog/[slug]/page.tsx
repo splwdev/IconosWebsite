@@ -76,7 +76,7 @@ export default async function BlogPostPage({
             which RLS restricts to genuinely published posts.
           */}
           <div
-            className="prose prose-neutral max-w-none text-[15px] leading-relaxed text-neutral-700"
+            className="prose prose-neutral max-w-none text-body text-neutral-700 prose-h2:text-h2 prose-h3:text-h3 prose-h4:text-h4"
             dangerouslySetInnerHTML={{ __html: post.body }}
           />
         </Container>

@@ -17,7 +17,7 @@ export function FeaturesSection({ content }: { content: FeaturesSectionContent }
         <SectionEyebrow tone={tone}>{eyebrow}</SectionEyebrow>
         <SectionTitle tone={tone}>{heading}</SectionTitle>
         {intro && (
-          <p className={`mt-3 text-base sm:text-lg ${isDark ? "text-white/75" : mutedText}`}>{intro}</p>
+          <p className={`mt-3 text-lead ${isDark ? "text-white/75" : mutedText}`}>{intro}</p>
         )}
       </div>
       {items.length > 0 && (
@@ -27,11 +27,11 @@ export function FeaturesSection({ content }: { content: FeaturesSectionContent }
               key={item.title}
               className={`border-t pt-5 ${isDark ? "border-white/20" : "border-brand-dark/15"}`}
             >
-              <h3 className={`text-lg font-semibold ${isDark ? "text-white" : "text-brand-dark"}`}>
+              <h3 className={`text-h3 font-semibold ${isDark ? "text-white" : "text-brand-dark"}`}>
                 {item.title}
               </h3>
               {item.body && (
-                <p className={`mt-2 text-sm leading-relaxed ${isDark ? "text-white/75" : mutedText}`}>
+                <p className={`mt-2 text-small ${isDark ? "text-white/75" : mutedText}`}>
                   {item.body}
                 </p>
               )}

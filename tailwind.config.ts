@@ -34,6 +34,20 @@ const config: Config = {
         display: "var(--font-display)",
         body: "var(--font-body)",
       },
+      // Theme type scale (admin → Themes → Font sizes). Each var is a fluid
+      // clamp() written by src/lib/theme/css-vars.ts. Use these on public
+      // pages instead of fixed sizes (text-xl, text-[15px]) so the theme
+      // controls them.
+      fontSize: {
+        h1: ["var(--text-h1)", { lineHeight: "1.1" }],
+        h2: ["var(--text-h2)", { lineHeight: "1.2" }],
+        h3: ["var(--text-h3)", { lineHeight: "1.3" }],
+        h4: ["var(--text-h4)", { lineHeight: "1.4" }],
+        body: ["var(--text-body)", { lineHeight: "1.65" }],
+        small: ["var(--text-small)", { lineHeight: "1.55" }],
+        // Intro paragraphs under a page or section title.
+        lead: ["calc(var(--text-body) * 1.125)", { lineHeight: "1.6" }],
+      },
       borderRadius: {
         brand: "var(--radius-brand)",
       },

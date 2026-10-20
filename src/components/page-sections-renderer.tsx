@@ -29,11 +29,13 @@ const MEDIA_SIZE_CLASS: Record<MediaSize, string> = {
 // blockquote is styled as a large pull quote, which is how the founder
 // section's quote is authored.
 const PROSE_CLASS =
-  "prose prose-neutral max-w-none text-[15px] leading-relaxed text-brand-dark/80 " +
+  "prose prose-neutral max-w-none text-body text-brand-dark/80 " +
+  "prose-h2:text-h2 prose-h3:text-h3 prose-h4:text-h4 " +
   "prose-headings:text-brand-dark prose-a:text-brand-dark prose-strong:text-brand-dark " +
   "prose-blockquote:mb-5 prose-blockquote:mt-0 prose-blockquote:border-0 prose-blockquote:p-0 prose-blockquote:not-italic " +
-  "prose-blockquote:text-2xl prose-blockquote:font-medium prose-blockquote:leading-snug " +
-  "prose-blockquote:text-brand-dark sm:prose-blockquote:text-[1.75rem]";
+  // Pull quote: scales with the theme's Heading 2 size.
+  "prose-blockquote:text-[length:calc(var(--text-h2)*0.78)] prose-blockquote:font-medium prose-blockquote:leading-snug " +
+  "prose-blockquote:text-brand-dark";
 
 // PageSectionsRenderer is an async Server Component — the four "smart"
 // section types (services_grid, programs_highlight, testimonials,
@@ -94,7 +96,7 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
               </div>
             ) : null}
           </div>
-          {caption && <p className={`mt-3 text-center text-sm ${mutedText}`}>{caption}</p>}
+          {caption && <p className={`mt-3 text-center text-small ${mutedText}`}>{caption}</p>}
         </div>
       );
     }
@@ -149,7 +151,8 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
         >
           <SectionEyebrow tone={isDark ? "light" : "dark"}>{eyebrow}</SectionEyebrow>
           <h2
-            className={`text-balance text-2xl font-semibold tracking-tight sm:text-3xl ${
+            // Slightly smaller than a section title so it fits the narrower panel.
+            className={`text-balance text-[length:calc(var(--text-h2)*0.85)] font-semibold leading-tight tracking-tight ${
               isDark ? "" : "text-brand-dark"
             }`}
           >
@@ -157,7 +160,7 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
           </h2>
           {body && (
             <p
-              className={`mx-auto mt-3 max-w-md text-sm leading-relaxed sm:text-base ${
+              className={`mx-auto mt-3 max-w-md text-body ${
                 isDark ? "text-white/75" : mutedText
               }`}
             >
@@ -192,8 +195,8 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
           {tiers.map((tier) => (
             <div key={tier.name} className="rounded-2xl bg-brand-cream p-6">
-              <h3 className="mb-2 font-semibold text-brand-dark">{tier.name}</h3>
-              <p className={`text-sm leading-relaxed ${mutedText}`}>{tier.description}</p>
+              <h3 className="mb-2 text-h3 font-semibold text-brand-dark">{tier.name}</h3>
+              <p className={`text-small ${mutedText}`}>{tier.description}</p>
             </div>
           ))}
         </div>
@@ -216,7 +219,7 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
           <div className="max-w-3xl">
             <SectionEyebrow>{eyebrow}</SectionEyebrow>
             <SectionTitle>{heading}</SectionTitle>
-            {intro && <p className={`mt-4 text-[15px] leading-relaxed ${mutedText}`}>{intro}</p>}
+            {intro && <p className={`mt-4 text-body ${mutedText}`}>{intro}</p>}
           </div>
           <ul className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {services.map((service) => (
@@ -227,10 +230,10 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
                     section.background === "tint" ? "bg-white" : "bg-brand-cream"
                   }`}
                 >
-                  <h3 className="text-lg font-medium text-brand-dark group-hover:underline group-hover:underline-offset-4">
+                  <h3 className="text-h3 font-medium text-brand-dark group-hover:underline group-hover:underline-offset-4">
                     {service.title}
                   </h3>
-                  <p className={`mt-2 text-sm leading-relaxed ${mutedText}`}>{service.summary}</p>
+                  <p className={`mt-2 text-small ${mutedText}`}>{service.summary}</p>
                 </Link>
               </li>
             ))}
@@ -265,8 +268,8 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
                     {program.tag}
                   </p>
                 )}
-                <h3 className="mb-2 text-xl font-medium text-brand-dark">{program.title}</h3>
-                <p className={`mb-6 text-[15px] leading-relaxed ${mutedText}`}>{program.summary}</p>
+                <h3 className="mb-2 text-h3 font-medium text-brand-dark">{program.title}</h3>
+                <p className={`mb-6 text-body ${mutedText}`}>{program.summary}</p>
                 <div className="mt-auto">
                   <ButtonLink href={`/how-we-work/${program.slug}`} srContext={`about ${program.title}`}>
                     Learn more
@@ -355,10 +358,10 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
                           {post.category}
                         </p>
                       )}
-                      <h3 className="mb-2 font-medium leading-snug text-brand-dark group-hover:underline group-hover:underline-offset-4">
+                      <h3 className="mb-2 text-h3 font-medium text-brand-dark group-hover:underline group-hover:underline-offset-4">
                         {post.title}
                       </h3>
-                      <p className={`line-clamp-3 text-sm ${mutedText}`}>{post.excerpt}</p>
+                      <p className={`line-clamp-3 text-small ${mutedText}`}>{post.excerpt}</p>
                     </div>
                   </Link>
                 </li>

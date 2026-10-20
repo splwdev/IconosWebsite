@@ -13,11 +13,11 @@ export function PageHero({
     <div className="border-b border-black/5 bg-brand-cream py-16 md:py-20">
       <Container>
         {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-        <h1 className="max-w-2xl text-3xl font-semibold leading-tight text-brand-dark md:text-4xl">
+        <h1 className="max-w-2xl text-h1 font-semibold text-brand-dark">
           {title}
         </h1>
         {intro && (
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-neutral-600">
+          <p className="mt-4 max-w-xl text-lead text-brand-dark/75">
             {intro}
           </p>
         )}

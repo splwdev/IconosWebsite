@@ -60,7 +60,7 @@ export function IssuesSection({ content }: { content: IssuesSectionContent }) {
             )}
           </div>
         )}
-        {tagline && <p className="mt-6 text-sm font-semibold text-brand-dark sm:text-base">{tagline}</p>}
+        {tagline && <p className="mt-6 text-body font-semibold text-brand-dark">{tagline}</p>}
         {button_label && button_href && (
           <ButtonLink href={button_href} className="mt-4">
             {button_label}

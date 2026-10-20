@@ -37,7 +37,7 @@ export function SectionTitle({
   if (!children) return null;
   return (
     <Tag
-      className={`text-balance text-[1.75rem] font-semibold leading-tight tracking-tight sm:text-4xl ${
+      className={`text-balance text-h2 font-semibold tracking-tight ${
         tone === "dark" ? "text-brand-dark" : "text-white"
       }`}
     >

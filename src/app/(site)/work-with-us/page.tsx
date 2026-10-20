@@ -17,7 +17,7 @@ export default function WorkWithUsPage() {
         intro="We work with experienced, fully qualified independent lawyers and like-minded solicitors, either on a permanent or ad hoc basis."
       />
       <Section>
-        <Container className="max-w-2xl space-y-5 text-[15px] leading-relaxed text-neutral-700">
+        <Container className="max-w-2xl space-y-5 text-body text-neutral-700">
           <p>
             If you&apos;re a commercially minded lawyer who believes legal
             advice should help close deals rather than slow them down,

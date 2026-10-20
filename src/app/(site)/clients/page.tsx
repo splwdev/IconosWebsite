@@ -37,7 +37,7 @@ export default async function ClientsPage() {
       </Section>
       <Section tint>
         <Container className="text-center">
-          <h2 className="text-2xl font-semibold text-brand-dark">
+          <h2 className="text-h2 font-semibold text-brand-dark">
             Curious whether Iconos is the right fit for your business?
           </h2>
           <div className="mt-6">

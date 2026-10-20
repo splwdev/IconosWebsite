@@ -44,7 +44,7 @@ export default async function WhatWeDoPage() {
                 <span className="mb-4 block text-xs font-bold text-brand-accent">
                   0{i + 1}
                 </span>
-                <h2 className="mb-2 font-semibold text-brand-dark">{service.title}</h2>
+                <h2 className="mb-2 text-h3 font-semibold text-brand-dark">{service.title}</h2>
                 <p className="text-sm leading-relaxed text-neutral-500">{service.summary}</p>
               </Link>
             ))}

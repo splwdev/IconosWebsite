@@ -14,15 +14,17 @@ export function SiteHeader({ nav }: { nav: Array<NavLink | NavGroup> }) {
  
   return (
     <header className="relative z-40 border-b border-black/5 bg-white">
-      <Container className="flex items-center justify-between gap-6 py-3">
+      <Container className="flex items-center justify-between gap-6 py-1">
         <Link href="/" className="flex-shrink-0">
           <Image
             src="/logo.png"
             alt="Iconos Group — Your legal team, tailored"
-            width={192}
-            height={142}
+            width={576}
+            height={410}
             priority
-            className="h-14 w-auto"
+            sizes="(min-width: 1024px) 169px, (min-width: 640px) 112px, 90px"
+            // Wordmark ≈166px wide on desktop, matching the approved wireframe.
+            className="h-16 w-auto sm:h-20 lg:h-[7.5rem]"
           />
         </Link>
  

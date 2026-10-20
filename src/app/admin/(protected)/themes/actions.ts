@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { PREVIEW_COOKIE } from "@/lib/theme/get-active-theme";
-import { themeTokensSchema } from "@/lib/theme/types";
+import { DEFAULT_TYPE_SCALE, themeTokensSchema } from "@/lib/theme/types";
 import { checkThemeContrast } from "@/lib/theme/contrast";
  
 /**
@@ -132,6 +132,7 @@ export async function createBlankTheme() {
           white: "#FFFFFF",
         },
         radius: "pill",
+        type_scale: DEFAULT_TYPE_SCALE,
       },
       notes: null,
     })

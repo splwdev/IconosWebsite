@@ -14,8 +14,8 @@ function HeroCardBlock({ card }: { card: HeroCard }) {
             {card.eyebrow}
           </p>
         )}
-        <h2 className="mt-2 text-xl font-medium text-brand-dark">{card.title}</h2>
-        {card.summary && <p className={`mt-1.5 text-[15px] ${mutedText}`}>{card.summary}</p>}
+        <h2 className="mt-2 text-h3 font-medium text-brand-dark">{card.title}</h2>
+        {card.summary && <p className={`mt-1.5 text-body ${mutedText}`}>{card.summary}</p>}
         {card.points.length > 0 && (
           <ul className="mt-4 space-y-1.5 text-sm font-medium text-brand-dark">
             {card.points.map((point) => (
@@ -51,10 +51,10 @@ export function HeroSection({ content }: { content: HeroSectionContent }) {
     <div>
       <div className="grid items-center gap-8 md:grid-cols-2 md:gap-10">
         <div>
-          <h1 className="text-balance text-[2.25rem] font-semibold leading-[1.1] tracking-tight text-brand-dark sm:text-5xl">
+          <h1 className="text-balance text-h1 font-semibold tracking-tight text-brand-dark">
             {heading}
           </h1>
-          {lead && <p className={`mt-5 max-w-md text-base sm:text-lg ${mutedText}`}>{lead}</p>}
+          {lead && <p className={`mt-5 max-w-md text-lead ${mutedText}`}>{lead}</p>}
         </div>
         <SectionImage src={image_url} alt={image_alt} priority className="aspect-[3/2]" />
       </div>
