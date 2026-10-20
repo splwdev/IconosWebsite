@@ -61,6 +61,8 @@ import {
   type TextChecklistSectionContent,
   type ComparisonSectionContent,
   type TestimonialSpotlightSectionContent,
+  type CalloutSectionContent,
+  type TierCard,
 } from "@/lib/content/page-sections";
 import { isValidYouTubeUrl } from "@/lib/content/youtube";
 import { generateMetaDescription } from "@/lib/content/generate-meta-description";
@@ -426,6 +428,17 @@ function CtaSectionFields({
   );
 }
  
+const BLANK_TIER: TierCard = {
+  name: "",
+  description: "",
+  price: "",
+  price_note: "",
+  features_intro: "",
+  features: [],
+  button_label: "",
+  button_href: "",
+};
+
 function TiersSectionFields({
   content,
   onChange,
@@ -433,49 +446,70 @@ function TiersSectionFields({
   content: TiersSectionContent;
   onChange: (content: TiersSectionContent) => void;
 }) {
-  function addTier() {
-    onChange({ tiers: [...content.tiers, { name: "", description: "" }] });
+  function updateTier(index: number, tier: TierCard) {
+    onChange({ ...content, tiers: content.tiers.map((t, i) => (i === index ? tier : t)) });
   }
-  function updateTier(index: number, field: "name" | "description", value: string) {
-    onChange({
-      tiers: content.tiers.map((t, i) => (i === index ? { ...t, [field]: value } : t)),
-    });
+  function moveTier(index: number, delta: -1 | 1) {
+    const target = index + delta;
+    if (target < 0 || target >= content.tiers.length) return;
+    onChange({ ...content, tiers: arrayMove(content.tiers, index, target) });
   }
-  function removeTier(index: number) {
-    onChange({ tiers: content.tiers.filter((_, i) => i !== index) });
-  }
- 
+
   return (
-    <div className="space-y-3">
-      {content.tiers.map((tier, index) => (
-        <div key={index} className="flex gap-2 rounded-lg border border-neutral-200 p-3">
-          <div className="flex-1 space-y-2">
-            <input
-              className={inputClass}
-              placeholder="Tier name"
-              value={tier.name}
-              onChange={(e) => updateTier(index, "name", e.target.value)}
-            />
-            <textarea
-              rows={2}
-              className={inputClass}
-              placeholder="Description"
-              value={tier.description}
-              onChange={(e) => updateTier(index, "description", e.target.value)}
+    <div className="space-y-4">
+      <EyebrowField value={content.eyebrow} onChange={(eyebrow) => onChange({ ...content, eyebrow })} />
+      <Field label="Heading" hint="optional">
+        <input className={inputClass} value={content.heading} onChange={(e) => onChange({ ...content, heading: e.target.value })} />
+      </Field>
+      <div className="space-y-3">
+        {content.tiers.map((tier, index) => (
+          <div key={index} className="space-y-3 rounded-lg border border-neutral-200 p-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-neutral-500">Tier {index + 1}</span>
+              <span className="flex gap-3">
+                <button type="button" onClick={() => moveTier(index, -1)} className="text-neutral-500" aria-label={`Move tier ${index + 1} up`}>↑</button>
+                <button type="button" onClick={() => moveTier(index, 1)} className="text-neutral-500" aria-label={`Move tier ${index + 1} down`}>↓</button>
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...content, tiers: content.tiers.filter((_, i) => i !== index) })}
+                  className="font-medium text-red-600"
+                >
+                  Remove
+                </button>
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Field label="Name">
+                <input className={inputClass} value={tier.name} onChange={(e) => updateTier(index, { ...tier, name: e.target.value })} />
+              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Price" hint="e.g. £450">
+                  <input className={inputClass} value={tier.price} onChange={(e) => updateTier(index, { ...tier, price: e.target.value })} />
+                </Field>
+                <Field label="After price" hint="e.g. + VAT a month">
+                  <input className={inputClass} value={tier.price_note} onChange={(e) => updateTier(index, { ...tier, price_note: e.target.value })} />
+                </Field>
+              </div>
+            </div>
+            <Field label="Description">
+              <textarea rows={2} className={inputClass} value={tier.description} onChange={(e) => updateTier(index, { ...tier, description: e.target.value })} />
+            </Field>
+            <Field label="Included — intro line" hint="optional, e.g. Everything in Essential, plus:">
+              <input className={inputClass} value={tier.features_intro} onChange={(e) => updateTier(index, { ...tier, features_intro: e.target.value })} />
+            </Field>
+            <LinesField label="What's included" value={tier.features} onChange={(features) => updateTier(index, { ...tier, features })} rows={4} />
+            <LinkFields
+              label={tier.button_label}
+              href={tier.button_href}
+              onLabelChange={(button_label) => updateTier(index, { ...tier, button_label })}
+              onHrefChange={(button_href) => updateTier(index, { ...tier, button_href })}
             />
           </div>
-          <button
-            type="button"
-            onClick={() => removeTier(index)}
-            className="self-start text-xs font-medium text-red-600"
-          >
-            Remove
-          </button>
-        </div>
-      ))}
+        ))}
+      </div>
       <button
         type="button"
-        onClick={addTier}
+        onClick={() => onChange({ ...content, tiers: [...content.tiers, { ...BLANK_TIER }] })}
         className="text-xs font-medium text-neutral-600 underline"
       >
         + Add tier
@@ -1110,6 +1144,19 @@ function TestimonialSpotlightSectionFields({
       {content.testimonial_id && !selected && (
         <p className="text-xs text-amber-700">The selected testimonial no longer exists — choose another.</p>
       )}
+      {!content.testimonial_id && (
+        <Field label="Placeholder" hint="optional — shown in a dashed box until a testimonial is chosen">
+          <input
+            className={inputClass}
+            placeholder="e.g. [Client testimonial, to follow]"
+            value={content.placeholder_text}
+            onChange={(e) => onChange({ ...content, placeholder_text: e.target.value })}
+          />
+        </Field>
+      )}
+      <Field label="Text beside the testimonial" hint="optional, shown above the button">
+        <textarea rows={2} className={inputClass} value={content.text} onChange={(e) => onChange({ ...content, text: e.target.value })} />
+      </Field>
       <LinkFields
         label={content.button_label}
         href={content.button_href}
@@ -1117,6 +1164,95 @@ function TestimonialSpotlightSectionFields({
         onLabelChange={(button_label) => onChange({ ...content, button_label })}
         onHrefChange={(button_href) => onChange({ ...content, button_href })}
       />
+    </div>
+  );
+}
+
+function CalloutSectionFields({
+  content,
+  onChange,
+}: {
+  content: CalloutSectionContent;
+  onChange: (content: CalloutSectionContent) => void;
+}) {
+  function updateBox(index: number, box: CalloutSectionContent["boxes"][number]) {
+    onChange({ ...content, boxes: content.boxes.map((b, i) => (i === index ? box : b)) });
+  }
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Field label="Badge" hint="optional, e.g. No subscription needed">
+          <input className={inputClass} value={content.badge} onChange={(e) => onChange({ ...content, badge: e.target.value })} />
+        </Field>
+        <Field label="Link anchor" hint="optional — lets other pages link to #this-name">
+          <input
+            className={inputClass}
+            placeholder="data-protection-training"
+            value={content.anchor}
+            onChange={(e) => onChange({ ...content, anchor: e.target.value })}
+          />
+        </Field>
+      </div>
+      <Field label="Heading">
+        <input className={inputClass} value={content.heading} onChange={(e) => onChange({ ...content, heading: e.target.value })} />
+      </Field>
+      <Field label="Text">
+        <textarea rows={3} className={inputClass} value={content.body} onChange={(e) => onChange({ ...content, body: e.target.value })} />
+      </Field>
+      <Field label="Small print" hint="optional, smaller text under the main text">
+        <input className={inputClass} value={content.note} onChange={(e) => onChange({ ...content, note: e.target.value })} />
+      </Field>
+      <LinkFields
+        label={content.button_label}
+        href={content.button_href}
+        onLabelChange={(button_label) => onChange({ ...content, button_label })}
+        onHrefChange={(button_href) => onChange({ ...content, button_href })}
+      />
+      <div className="space-y-2">
+        <span className="block text-xs font-medium text-neutral-600">
+          Side boxes <span className="font-normal text-neutral-400">(each can have a checklist, a paragraph, or both)</span>
+        </span>
+        {content.boxes.map((box, index) => (
+          <div key={index} className="space-y-2 rounded-lg bg-neutral-50 p-3">
+            <div className="flex gap-2">
+              <input
+                className={inputClass}
+                placeholder="Box label, e.g. Pricing"
+                value={box.label}
+                onChange={(e) => updateBox(index, { ...box, label: e.target.value })}
+              />
+              <button
+                type="button"
+                onClick={() => onChange({ ...content, boxes: content.boxes.filter((_, i) => i !== index) })}
+                className="text-xs font-medium text-red-600"
+              >
+                Remove
+              </button>
+            </div>
+            <textarea
+              rows={3}
+              className={inputClass}
+              placeholder="Checklist — one item per line"
+              value={box.items.join("\n")}
+              onChange={(e) => updateBox(index, { ...box, items: e.target.value.split("\n") })}
+            />
+            <textarea
+              rows={2}
+              className={inputClass}
+              placeholder="Paragraph"
+              value={box.text}
+              onChange={(e) => updateBox(index, { ...box, text: e.target.value })}
+            />
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => onChange({ ...content, boxes: [...content.boxes, { label: "", items: [], text: "" }] })}
+          className="text-xs font-medium text-neutral-600 underline"
+        >
+          + Add side box
+        </button>
+      </div>
     </div>
   );
 }
@@ -1326,6 +1462,12 @@ function SectionCard({
       )}
       {section.section_type === "comparison" && (
         <ComparisonSectionFields
+          content={section.content}
+          onChange={(content) => onChange({ ...section, content } as PageSection)}
+        />
+      )}
+      {section.section_type === "callout" && (
+        <CalloutSectionFields
           content={section.content}
           onChange={(content) => onChange({ ...section, content } as PageSection)}
         />
@@ -1556,7 +1698,7 @@ export function PageEditorForm({
           case "cta":
             return `${s.content.heading} ${s.content.body}`;
           case "tiers":
-            return s.content.tiers.map((t) => `${t.name} ${t.description}`).join(" ");
+            return [s.content.heading, ...s.content.tiers.map((t) => `${t.name} ${t.description}`)].join(" ");
           case "hero":
             return `${s.content.heading} ${s.content.lead}`;
           case "issues":
@@ -1568,6 +1710,8 @@ export function PageEditorForm({
             return [s.content.body, ...s.content.items].join(" ");
           case "comparison":
             return [s.content.heading, ...s.content.right.items].join(" ");
+          case "callout":
+            return `${s.content.heading} ${s.content.body}`;
           default:
             return "";
         }
