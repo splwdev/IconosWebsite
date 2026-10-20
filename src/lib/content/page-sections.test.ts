@@ -169,12 +169,6 @@ describe("0023_managed_legal_services_page.sql", () => {
     expect(sql).toMatch(/like '<p>Ongoing embedded legal support across corporate/);
   });
 
-  it("is the latest section-type constraint and allows every application section type", () => {
-    const constraint = sql.match(/check \(section_type in \(([\s\S]*?)\)\)/)?.[1] ?? "";
-    for (const type of SECTION_TYPES) {
-      expect(constraint).toContain(`'${type}'`);
-    }
-  });
 });
 
 describe("new section defaults", () => {
@@ -208,7 +202,7 @@ describe("hasOwnCallToAction", () => {
   const spotlight = (label: string, href: string) => ({
     section_type: "testimonial_spotlight" as const,
     background: "none" as const,
-    content: { testimonial_id: null, button_label: label, button_href: href },
+    content: { testimonial_id: null, placeholder_text: "", text: "", button_label: label, button_href: href },
   });
 
   it("is true with a CTA section or a spotlight that has a button", () => {
@@ -219,5 +213,80 @@ describe("hasOwnCallToAction", () => {
   it("is false otherwise, so the page template adds its fallback button", () => {
     expect(hasOwnCallToAction([createBlankSection("text"), spotlight("", "")])).toBe(false);
     expect(hasOwnCallToAction([])).toBe(false);
+  });
+});
+
+describe("0024_vdpo_page.sql", () => {
+  const { sql, rows } = seededSections("0024_vdpo_page.sql");
+
+  it("seeds the mockup's sections in order", () => {
+    expect(rows.map((r) => r.section_type)).toEqual([
+      "text_checklist",
+      "steps",
+      "comparison",
+      "tiers",
+      "callout",
+      "testimonial_spotlight",
+      "cta",
+    ]);
+  });
+
+  it.each(rows.map((r) => [r.section_type, r] as const))("%s row passes the application schema", (_t, row) => {
+    const result = pageSectionSchema.safeParse(row);
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+  });
+
+  it("renames the tiers to Essential / Growth / Managed", () => {
+    const tiers = rows.find((r) => r.section_type === "tiers");
+    expect(tiers?.content.tiers.map((t: { name: string }) => t.name)).toEqual(["Essential", "Growth", "Managed"]);
+  });
+
+  it("gives the training panel the anchor the homepage card links to", () => {
+    const callout = rows.find((r) => r.section_type === "callout");
+    expect(callout?.content.anchor).toBe("data-protection-training");
+    expect(sql).toContain("/how-we-work/virtual-data-protection-officer#data-protection-training");
+  });
+
+  it("only replaces the original seeded sections and the original homepage link", () => {
+    expect(sql).toMatch(/<> 2/);
+    expect(sql).toMatch(/->>'name' = 'Standard'/);
+    expect(sql).toMatch(/->>'button_href' = '\/contact'/);
+  });
+
+  it("is the latest section-type constraint and allows every application section type", () => {
+    const constraint = sql.match(/check \(section_type in \(([\s\S]*?)\)\)/)?.[1] ?? "";
+    for (const type of SECTION_TYPES) {
+      expect(constraint).toContain(`'${type}'`);
+    }
+  });
+});
+
+describe("tiers and callout schemas", () => {
+  it("still parses tier sections saved before prices and features existed", () => {
+    const parsed = pageSectionSchema.parse({
+      section_type: "tiers",
+      background: "none",
+      content: { tiers: [{ name: "Essential", description: "Core DPO oversight." }] },
+    });
+    if (parsed.section_type !== "tiers") throw new Error("wrong type");
+    expect(parsed.content.heading).toBe("");
+    expect(parsed.content.tiers[0]).toMatchObject({ price: "", features: [], button_href: "" });
+  });
+
+  it.each([["Data protection", false], ["data_protection", false], ["data-protection-training", true], ["", true]])(
+    "callout anchor %j valid: %s",
+    (anchor, ok) => {
+      const result = pageSectionSchema.safeParse({ section_type: "callout", background: "none", content: { anchor } });
+      expect(result.success).toBe(ok);
+    }
+  );
+
+  it("rejects an unsafe tier button link", () => {
+    const result = pageSectionSchema.safeParse({
+      section_type: "tiers",
+      background: "none",
+      content: { tiers: [{ name: "x", description: "y", button_label: "Go", button_href: "javascript:alert(1)" }] },
+    });
+    expect(result.success).toBe(false);
   });
 });

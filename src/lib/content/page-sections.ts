@@ -19,6 +19,7 @@ export const SECTION_TYPES = [
   "text_checklist",
   "comparison",
   "testimonial_spotlight",
+  "callout",
 ] as const;
 export type SectionType = (typeof SECTION_TYPES)[number];
  
@@ -39,6 +40,7 @@ export const SECTION_TYPE_LABELS: Record<SectionType, string> = {
   text_checklist: "Text + Checklist",
   comparison: "Comparison",
   testimonial_spotlight: "Testimonial Spotlight",
+  callout: "Callout Panel",
 };
  
 // These four render live data (published services/programs, testimonials,
@@ -170,8 +172,28 @@ export const ctaSectionContentSchema = z.object({
 });
 export type CtaSectionContent = z.infer<typeof ctaSectionContentSchema>;
  
+/**
+ * A pricing tier card. Extends the original name + description tier (still
+ * used by the legacy pages.tiers column), so tier sections saved before the
+ * price/features fields existed parse unchanged.
+ */
+export const tierCardSchema = tierSchema.extend({
+  /** e.g. "£450" — free text so "From £450" or "POA" work too. */
+  price: z.string().default(""),
+  /** e.g. "+ VAT a month" */
+  price_note: z.string().default(""),
+  /** e.g. "Everything in Essential, plus:" */
+  features_intro: z.string().default(""),
+  features: lineList,
+  button_label: z.string().default(""),
+  button_href: optionalHref,
+});
+export type TierCard = z.infer<typeof tierCardSchema>;
+
 export const tiersSectionContentSchema = z.object({
-  tiers: z.array(tierSchema),
+  eyebrow: z.string().default(""),
+  heading: z.string().default(""),
+  tiers: z.array(tierCardSchema),
 });
 export type TiersSectionContent = z.infer<typeof tiersSectionContentSchema>;
  
@@ -310,10 +332,40 @@ export type ComparisonSectionContent = z.infer<typeof comparisonSectionContentSc
  */
 export const testimonialSpotlightSectionContentSchema = z.object({
   testimonial_id: z.string().uuid().nullable().default(null),
+  /** Shown in a dashed box when no testimonial is selected, e.g. "[Client testimonial, to follow]". */
+  placeholder_text: z.string().default(""),
+  /** Optional paragraph above the button. */
+  text: z.string().default(""),
   button_label: z.string().default(""),
   button_href: optionalHref,
 });
 export type TestimonialSpotlightSectionContent = z.infer<typeof testimonialSpotlightSectionContentSchema>;
+
+const calloutBoxSchema = z.object({
+  label: z.string().default(""),
+  items: lineList,
+  text: z.string().default(""),
+});
+
+/**
+ * An outlined feature panel: badge, heading, text and a button, with small
+ * info boxes alongside (e.g. "Data protection training"). `anchor` gives the
+ * panel an id so other pages can link straight to it (/page#anchor).
+ */
+export const calloutSectionContentSchema = z.object({
+  anchor: z
+    .string()
+    .default("")
+    .refine((v) => v === "" || /^[a-z0-9]+(-[a-z0-9]+)*$/.test(v), "Lowercase letters, numbers and hyphens only"),
+  badge: z.string().default(""),
+  heading: z.string().default(""),
+  body: z.string().default(""),
+  note: z.string().default(""),
+  button_label: z.string().default(""),
+  button_href: optionalHref,
+  boxes: z.array(calloutBoxSchema).default([]),
+});
+export type CalloutSectionContent = z.infer<typeof calloutSectionContentSchema>;
  
 export const pageSectionSchema = z.discriminatedUnion("section_type", [
   z.object({
@@ -350,6 +402,11 @@ export const pageSectionSchema = z.discriminatedUnion("section_type", [
     section_type: z.literal("testimonial_spotlight"),
     background: z.enum(SECTION_BACKGROUNDS),
     content: testimonialSpotlightSectionContentSchema,
+  }),
+  z.object({
+    section_type: z.literal("callout"),
+    background: z.enum(SECTION_BACKGROUNDS),
+    content: calloutSectionContentSchema,
   }),
   z.object({
     section_type: z.literal("text"),
@@ -462,7 +519,7 @@ export function createBlankSection(type: SectionType): PageSection {
         },
       };
     case "tiers":
-      return { section_type: "tiers", background: "none", content: { tiers: [] } };
+      return { section_type: "tiers", background: "tint", content: { eyebrow: "", heading: "", tiers: [] } };
     case "services_grid":
       return {
         section_type: "services_grid",
@@ -546,7 +603,13 @@ export function createBlankSection(type: SectionType): PageSection {
       return {
         section_type: "testimonial_spotlight",
         background: "none",
-        content: { testimonial_id: null, button_label: "", button_href: "" },
+        content: { testimonial_id: null, placeholder_text: "", text: "", button_label: "", button_href: "" },
+      };
+    case "callout":
+      return {
+        section_type: "callout",
+        background: "none",
+        content: { anchor: "", badge: "", heading: "", body: "", note: "", button_label: "", button_href: "", boxes: [] },
       };
   }
 }

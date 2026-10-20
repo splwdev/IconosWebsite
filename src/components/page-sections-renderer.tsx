@@ -15,6 +15,8 @@ import { StepsSection } from "@/components/sections/steps-section";
 import { TextChecklistSection } from "@/components/sections/text-checklist-section";
 import { ComparisonSection } from "@/components/sections/comparison-section";
 import { TestimonialSpotlightSection } from "@/components/sections/testimonial-spotlight-section";
+import { TiersSection } from "@/components/sections/tiers-section";
+import { CalloutSection } from "@/components/sections/callout-section";
 import {
   ButtonLink,
   SectionEyebrow,
@@ -85,6 +87,9 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
 
     case "comparison":
       return <ComparisonSection content={section.content} />;
+
+    case "callout":
+      return <CalloutSection content={section.content} />;
 
     case "testimonial_spotlight":
       return <TestimonialSpotlightSection content={section.content} onTint={section.background === "tint"} />;
@@ -205,20 +210,8 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
       );
     }
 
-    case "tiers": {
-      const { tiers } = section.content;
-      if (tiers.length === 0) return null;
-      return (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-          {tiers.map((tier) => (
-            <div key={tier.name} className="rounded-2xl bg-brand-cream p-6">
-              <h3 className="mb-2 text-h3 font-semibold text-brand-dark">{tier.name}</h3>
-              <p className={`text-small ${mutedText}`}>{tier.description}</p>
-            </div>
-          ))}
-        </div>
-      );
-    }
+    case "tiers":
+      return <TiersSection content={section.content} onTint={section.background === "tint"} />;
 
     case "services_grid": {
       const { eyebrow, heading, intro } = section.content;
