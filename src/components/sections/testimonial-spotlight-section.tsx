@@ -18,7 +18,7 @@ export async function TestimonialSpotlightSection({
   const testimonial = content.testimonial_id ? await getPublishedTestimonial(content.testimonial_id) : null;
   const hasButton = Boolean(content.button_label && content.button_href);
   const showPlaceholder = !testimonial && !content.testimonial_id && Boolean(content.placeholder_text);
-  const hasAside = hasButton || Boolean(content.text);
+  const hasAside = hasButton || Boolean(content.text) || Boolean(content.heading);
   if (!testimonial && !showPlaceholder && !hasAside) return null;
 
   return (
@@ -35,9 +35,12 @@ export async function TestimonialSpotlightSection({
       )}
       {hasAside && (
         <div>
-          {content.text && <p className="max-w-md text-body text-brand-dark">{content.text}</p>}
+          {content.heading && <h2 className="text-h4 font-semibold text-brand-dark">{content.heading}</h2>}
+          {content.text && (
+            <p className={`max-w-md text-body text-brand-dark ${content.heading ? "mt-1" : ""}`}>{content.text}</p>
+          )}
           {hasButton && (
-            <ButtonLink href={content.button_href} className={content.text ? "mt-4" : ""}>
+            <ButtonLink href={content.button_href} className={content.text || content.heading ? "mt-4" : ""}>
               {content.button_label}
             </ButtonLink>
           )}

@@ -292,6 +292,14 @@ export const CARD_GRID_COLUMNS = [3, 4] as const;
  * get". Stored as section_type "steps" — the name predates the
  * un-numbered option.
  */
+/** Optional highlighted (dark) card at the end of a card grid, e.g. "Need help with something else?". */
+const finalCardSchema = z.object({
+  title: z.string().default(""),
+  body: z.string().default(""),
+  link_label: z.string().default(""),
+  link_href: optionalHref,
+});
+
 export const stepsSectionContentSchema = z.object({
   eyebrow: z.string().default(""),
   heading: z.string().default(""),
@@ -299,6 +307,7 @@ export const stepsSectionContentSchema = z.object({
   numbered: z.boolean().default(true),
   columns: z.union([z.literal(3), z.literal(4)]).default(4),
   items: z.array(featureItemSchema).default([]),
+  final_card: finalCardSchema.default({}),
 });
 export type StepsSectionContent = z.infer<typeof stepsSectionContentSchema>;
 
@@ -334,7 +343,8 @@ export const testimonialSpotlightSectionContentSchema = z.object({
   testimonial_id: z.string().uuid().nullable().default(null),
   /** Shown in a dashed box when no testimonial is selected, e.g. "[Client testimonial, to follow]". */
   placeholder_text: z.string().default(""),
-  /** Optional paragraph above the button. */
+  /** Optional small heading and paragraph above the button. */
+  heading: z.string().default(""),
   text: z.string().default(""),
   button_label: z.string().default(""),
   button_href: optionalHref,
@@ -585,7 +595,15 @@ export function createBlankSection(type: SectionType): PageSection {
       return {
         section_type: "steps",
         background: "tint",
-        content: { eyebrow: "", heading: "", intro: "", numbered: true, columns: 4, items: [] },
+        content: {
+          eyebrow: "",
+          heading: "",
+          intro: "",
+          numbered: true,
+          columns: 4,
+          items: [],
+          final_card: { title: "", body: "", link_label: "", link_href: "" },
+        },
       };
     case "text_checklist":
       return {
@@ -603,7 +621,7 @@ export function createBlankSection(type: SectionType): PageSection {
       return {
         section_type: "testimonial_spotlight",
         background: "none",
-        content: { testimonial_id: null, placeholder_text: "", text: "", button_label: "", button_href: "" },
+        content: { testimonial_id: null, placeholder_text: "", heading: "", text: "", button_label: "", button_href: "" },
       };
     case "callout":
       return {

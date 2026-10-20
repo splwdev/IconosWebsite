@@ -48,7 +48,7 @@ export default async function ServicePage({
  
   return (
     <>
-      <PageHero eyebrow="What we do" title={service.title} intro={service.intro || service.summary} />
+      <PageHero eyebrow="What we do" title={service.heading || service.title} intro={service.intro || service.summary} />
       <Section>
         <Container>
           {service.featured_image_url && (

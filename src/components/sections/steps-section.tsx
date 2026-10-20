@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import type { StepsSectionContent } from "@/lib/content/page-sections";
 import { SectionEyebrow, SectionTitle, mutedText } from "./section-primitives";
 
@@ -8,7 +10,7 @@ import { SectionEyebrow, SectionTitle, mutedText } from "./section-primitives";
  * list of benefit cards ("What you get").
  */
 export function StepsSection({ content, onTint }: { content: StepsSectionContent; onTint: boolean }) {
-  const { eyebrow, heading, intro, items, numbered, columns } = content;
+  const { eyebrow, heading, intro, items, numbered, columns, final_card } = content;
   const cardBg = onTint ? "bg-white" : "bg-brand-cream";
   const List = numbered ? "ol" : "ul";
   const gridCols = columns === 3 ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-2 lg:grid-cols-4";
@@ -33,6 +35,21 @@ export function StepsSection({ content, onTint }: { content: StepsSectionContent
               {item.body && <p className={`mt-2 text-small ${mutedText}`}>{item.body}</p>}
             </li>
           ))}
+          {final_card.title && (
+            <li className="rounded-2xl bg-brand-dark p-6 text-white">
+              <h3 className="text-h4 font-semibold">{final_card.title}</h3>
+              {final_card.body && <p className="mt-2 text-small text-white/80">{final_card.body}</p>}
+              {final_card.link_label && final_card.link_href && (
+                <Link
+                  href={final_card.link_href}
+                  className="mt-4 inline-flex items-center gap-1 text-small font-semibold text-white underline-offset-4 hover:underline"
+                >
+                  {final_card.link_label}
+                  <ArrowRight aria-hidden className="h-4 w-4" />
+                </Link>
+              )}
+            </li>
+          )}
         </List>
       )}
     </div>

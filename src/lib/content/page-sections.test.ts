@@ -202,7 +202,7 @@ describe("hasOwnCallToAction", () => {
   const spotlight = (label: string, href: string) => ({
     section_type: "testimonial_spotlight" as const,
     background: "none" as const,
-    content: { testimonial_id: null, placeholder_text: "", text: "", button_label: label, button_href: href },
+    content: { testimonial_id: null, placeholder_text: "", heading: "", text: "", button_label: label, button_href: href },
   });
 
   it("is true with a CTA section or a spotlight that has a button", () => {
@@ -286,6 +286,47 @@ describe("tiers and callout schemas", () => {
       section_type: "tiers",
       background: "none",
       content: { tiers: [{ name: "x", description: "y", button_label: "Go", button_href: "javascript:alert(1)" }] },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("0025_ad_hoc_page.sql", () => {
+  const { sql, rows } = seededSections("0025_ad_hoc_page.sql");
+
+  it("seeds the mockup's sections (spotlight is built with jsonb_build_object)", () => {
+    expect(rows.map((r) => r.section_type)).toEqual(["text_checklist", "steps", "cta"]);
+    expect(sql).toMatch(/\(v_page_id, 'testimonial_spotlight', 'none',\s+jsonb_build_object/);
+  });
+
+  it.each(rows.map((r) => [r.section_type, r] as const))("%s row passes the application schema", (_t, row) => {
+    const result = pageSectionSchema.safeParse(row);
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+  });
+
+  it("ends the one-off matters grid with a highlighted card", () => {
+    const grid = rows.find((r) => r.section_type === "steps");
+    expect(grid?.content.items).toHaveLength(7);
+    expect(grid?.content.final_card).toMatchObject({ title: "Need help with something else?", link_href: "/contact" });
+  });
+
+  it("adds no section types, so it is safe to apply before the code deploys", () => {
+    expect(sql).not.toMatch(/page_sections_section_type_check/);
+  });
+});
+
+describe("card grid final card", () => {
+  it("defaults to empty for grids saved before it existed", () => {
+    const parsed = pageSectionSchema.parse({ section_type: "steps", background: "tint", content: { items: [] } });
+    if (parsed.section_type !== "steps") throw new Error("wrong type");
+    expect(parsed.content.final_card).toEqual({ title: "", body: "", link_label: "", link_href: "" });
+  });
+
+  it("rejects an unsafe final card link", () => {
+    const result = pageSectionSchema.safeParse({
+      section_type: "steps",
+      background: "tint",
+      content: { final_card: { title: "x", link_label: "Go", link_href: "javascript:alert(1)" } },
     });
     expect(result.success).toBe(false);
   });

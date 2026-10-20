@@ -48,7 +48,7 @@ export default async function WorkProgramPage({
  
   return (
     <>
-      <PageHero eyebrow={program.tag ?? "How we work"} title={program.title} intro={program.intro || program.summary} />
+      <PageHero eyebrow={program.tag ?? "How we work"} title={program.heading || program.title} intro={program.intro || program.summary} />
       <Section>
         <Container>
           {program.featured_image_url && (
