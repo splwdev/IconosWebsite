@@ -40,6 +40,7 @@ import {
   MEDIA_LAYOUTS,
   CTA_STYLES,
   FEATURE_STYLES,
+  CARD_GRID_COLUMNS,
   createBlankSection,
   type PageSection,
   type SectionType,
@@ -57,6 +58,9 @@ import {
   type IssuesSectionContent,
   type FeaturesSectionContent,
   type StepsSectionContent,
+  type TextChecklistSectionContent,
+  type ComparisonSectionContent,
+  type TestimonialSpotlightSectionContent,
 } from "@/lib/content/page-sections";
 import { isValidYouTubeUrl } from "@/lib/content/youtube";
 import { generateMetaDescription } from "@/lib/content/generate-meta-description";
@@ -941,17 +945,40 @@ function StepsSectionFields({
       <Field label="Intro text" hint="optional">
         <input className={inputClass} value={content.intro} onChange={(e) => onChange({ ...content, intro: e.target.value })} />
       </Field>
-      <div className="space-y-2">
-        <span className="block text-xs font-medium text-neutral-600">
-          Steps <span className="font-normal text-neutral-400">(numbered 01, 02… automatically; four fit best)</span>
+      <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-600">
+        <label className="flex items-center gap-1.5">
+          <input
+            type="checkbox"
+            checked={content.numbered}
+            onChange={(e) => onChange({ ...content, numbered: e.target.checked })}
+          />
+          Numbered (01, 02… — for a process)
+        </label>
+        <span className="flex items-center gap-1.5">
+          Columns on desktop:
+          {CARD_GRID_COLUMNS.map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onChange({ ...content, columns: n })}
+              className={`rounded border px-2 py-0.5 font-medium ${
+                content.columns === n ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300"
+              }`}
+            >
+              {n}
+            </button>
+          ))}
         </span>
+      </div>
+      <div className="space-y-2">
+        <span className="block text-xs font-medium text-neutral-600">Cards</span>
         {content.items.map((item, index) => (
           <div key={index} className="flex gap-2 rounded-lg border border-neutral-200 p-3">
             <span className="w-6 pt-2 text-xs font-medium tabular-nums text-neutral-400">
-              {String(index + 1).padStart(2, "0")}
+              {content.numbered ? String(index + 1).padStart(2, "0") : "•"}
             </span>
             <div className="flex-1 space-y-2">
-              <input className={inputClass} placeholder="Step title" value={item.title} onChange={(e) => updateItem(index, "title", e.target.value)} />
+              <input className={inputClass} placeholder="Card title" value={item.title} onChange={(e) => updateItem(index, "title", e.target.value)} />
               <textarea rows={2} className={inputClass} placeholder="Short description" value={item.body} onChange={(e) => updateItem(index, "body", e.target.value)} />
             </div>
             <div className="flex flex-col items-end gap-1 text-xs">
@@ -972,9 +999,124 @@ function StepsSectionFields({
           onClick={() => onChange({ ...content, items: [...content.items, { title: "", body: "" }] })}
           className="text-xs font-medium text-neutral-600 underline"
         >
-          + Add step
+          + Add card
         </button>
       </div>
+    </div>
+  );
+}
+
+export type TestimonialOption = { id: string; label: string; published: boolean };
+
+function TextChecklistSectionFields({
+  content,
+  onChange,
+}: {
+  content: TextChecklistSectionContent;
+  onChange: (content: TextChecklistSectionContent) => void;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-[3fr_2fr]">
+      <Field label="Text" hint="a blank line starts a new paragraph">
+        <textarea
+          rows={5}
+          className={inputClass}
+          value={content.body}
+          onChange={(e) => onChange({ ...content, body: e.target.value })}
+        />
+      </Field>
+      <div className="space-y-3">
+        <Field label="Checklist label" hint="e.g. Ideal if">
+          <input
+            className={inputClass}
+            value={content.list_label}
+            onChange={(e) => onChange({ ...content, list_label: e.target.value })}
+          />
+        </Field>
+        <LinesField label="Checklist items" value={content.items} onChange={(items) => onChange({ ...content, items })} />
+      </div>
+    </div>
+  );
+}
+
+function ComparisonSectionFields({
+  content,
+  onChange,
+}: {
+  content: ComparisonSectionContent;
+  onChange: (content: ComparisonSectionContent) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <EyebrowField value={content.eyebrow} onChange={(eyebrow) => onChange({ ...content, eyebrow })} />
+      <Field label="Heading">
+        <input className={inputClass} value={content.heading} onChange={(e) => onChange({ ...content, heading: e.target.value })} />
+      </Field>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {(["left", "right"] as const).map((side) => (
+          <div key={side} className={`space-y-3 rounded-lg p-3 ${side === "right" ? "bg-neutral-900 text-white" : "bg-neutral-50"}`}>
+            <span className={`block text-xs font-semibold ${side === "right" ? "text-neutral-300" : "text-neutral-500"}`}>
+              {side === "left" ? "Left column (the alternative)" : "Right column (highlighted — your offer)"}
+            </span>
+            <input
+              className={`${inputClass} text-neutral-900`}
+              placeholder="Column title"
+              value={content[side].title}
+              onChange={(e) => onChange({ ...content, [side]: { ...content[side], title: e.target.value } })}
+            />
+            <textarea
+              rows={4}
+              className={`${inputClass} text-neutral-900`}
+              placeholder="One point per line"
+              value={content[side].items.join("\n")}
+              onChange={(e) =>
+                onChange({ ...content, [side]: { ...content[side], items: e.target.value.split("\n") } })
+              }
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TestimonialSpotlightSectionFields({
+  content,
+  onChange,
+  testimonialOptions,
+}: {
+  content: TestimonialSpotlightSectionContent;
+  onChange: (content: TestimonialSpotlightSectionContent) => void;
+  testimonialOptions: TestimonialOption[];
+}) {
+  const selected = testimonialOptions.find((t) => t.id === content.testimonial_id);
+  return (
+    <div className="space-y-4">
+      <Field label="Testimonial" hint="managed in Testimonials">
+        <select
+          className={inputClass}
+          value={content.testimonial_id ?? ""}
+          onChange={(e) => onChange({ ...content, testimonial_id: e.target.value || null })}
+        >
+          <option value="">None — button only</option>
+          {testimonialOptions.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.label}
+              {t.published ? "" : " (draft — won't show until published)"}
+            </option>
+          ))}
+        </select>
+      </Field>
+      {content.testimonial_id && !selected && (
+        <p className="text-xs text-amber-700">The selected testimonial no longer exists — choose another.</p>
+      )}
+      <LinkFields
+        label={content.button_label}
+        href={content.button_href}
+        placeholder="/contact"
+        onLabelChange={(button_label) => onChange({ ...content, button_label })}
+        onHrefChange={(button_href) => onChange({ ...content, button_href })}
+      />
     </div>
   );
 }
@@ -1020,12 +1162,14 @@ function SectionCard({
   uploading,
   onImageFile,
   dragHandleProps,
+  testimonialOptions,
 }: {
   section: EditableSection;
   onChange: (section: PageSection) => void;
   onRemove: () => void;
   uploading: boolean;
   onImageFile: (file: File) => void;
+  testimonialOptions: TestimonialOption[];
   dragHandleProps: {
     attributes: ReturnType<typeof useSortable>["attributes"];
     listeners: ReturnType<typeof useSortable>["listeners"];
@@ -1174,6 +1318,25 @@ function SectionCard({
           onChange={(content) => onChange({ ...section, content } as PageSection)}
         />
       )}
+      {section.section_type === "text_checklist" && (
+        <TextChecklistSectionFields
+          content={section.content}
+          onChange={(content) => onChange({ ...section, content } as PageSection)}
+        />
+      )}
+      {section.section_type === "comparison" && (
+        <ComparisonSectionFields
+          content={section.content}
+          onChange={(content) => onChange({ ...section, content } as PageSection)}
+        />
+      )}
+      {section.section_type === "testimonial_spotlight" && (
+        <TestimonialSpotlightSectionFields
+          content={section.content}
+          onChange={(content) => onChange({ ...section, content } as PageSection)}
+          testimonialOptions={testimonialOptions}
+        />
+      )}
       {section.section_type === "blog_teaser" && (
         <SmartSectionFields<BlogTeaserSectionContent>
           content={section.content}
@@ -1191,9 +1354,11 @@ function SectionCard({
 export function PageEditorForm({
   page,
   initialSections,
+  testimonialOptions = [],
 }: {
   page: Page;
   initialSections: PageSection[];
+  testimonialOptions?: TestimonialOption[];
 }) {
   const [isSaving, startSaving] = useTransition();
   const [isPublishing, startPublishing] = useTransition();
@@ -1230,6 +1395,7 @@ export function PageEditorForm({
       title: page.title,
       tag: page.tag ?? "",
       summary: page.summary,
+      intro: page.intro ?? "",
       body: page.body, // legacy field, no longer editable — see PROJECT_STATUS
       tiers: null, // legacy field, superseded by tiers-type sections
       meta_description: page.meta_description ?? "",
@@ -1398,6 +1564,10 @@ export function PageEditorForm({
           case "features":
           case "steps":
             return [s.content.heading, s.content.intro, ...s.content.items.map((i) => `${i.title} ${i.body}`)].join(" ");
+          case "text_checklist":
+            return [s.content.body, ...s.content.items].join(" ");
+          case "comparison":
+            return [s.content.heading, ...s.content.right.items].join(" ");
           default:
             return "";
         }
@@ -1511,6 +1681,18 @@ export function PageEditorForm({
             )}
           </div>
         )}
+
+        {(page.page_type === "program" || page.page_type === "service") && (
+          <div>
+            <label className="mb-1 block text-sm font-medium text-neutral-700">
+              Page intro{" "}
+              <span className="font-normal text-neutral-400">
+                (optional — paragraph under the page heading; leave blank to use the summary)
+              </span>
+            </label>
+            <textarea rows={2} className={inputClass} {...register("intro")} />
+          </div>
+        )}
  
         <div>
           <div className="mb-2 flex items-center justify-between">
@@ -1543,6 +1725,7 @@ export function PageEditorForm({
                           handleSectionImageUpload(section._localId, file)
                         }
                         dragHandleProps={dragHandleProps}
+                        testimonialOptions={testimonialOptions}
                       />
                     )}
                   </SortableSectionCard>

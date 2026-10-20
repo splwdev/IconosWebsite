@@ -8,6 +8,7 @@ const overview: PageInput = {
   title: "Fixed fees. No surprise invoices.",
   tag: "How we work",
   summary: "Our subscriptions offer one predictable monthly cost.",
+  intro: null,
   body: "",
   tiers: null,
   meta_description: null,

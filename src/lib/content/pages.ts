@@ -71,6 +71,8 @@ export const pageInputSchema = z
     title: z.string().min(1, "Title is required"),
     tag: z.string().nullable(),
     summary: z.string().min(1, "Summary is required"),
+    /** Optional header paragraph; when empty the page header shows the summary. */
+    intro: z.string().nullable().default(null),
     body: z.string(),
     tiers: z.array(tierSchema).nullable(),
     meta_description: z.string().nullable(),
@@ -171,6 +173,8 @@ export interface Page {
   title: string;
   tag: string | null;
   summary: string;
+  /** Header paragraph for service/program pages; null → use summary. Added in 0023. */
+  intro?: string | null;
   body: string;
   tiers: PageTier[] | null;
   meta_description: string | null;

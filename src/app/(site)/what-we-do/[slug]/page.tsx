@@ -5,6 +5,7 @@ import { PageHero } from "@/components/page-hero";
 import { Container, Section, PrimaryButton } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { getPageSections } from "@/lib/content/get-page-sections";
+import { hasOwnCallToAction } from "@/lib/content/page-sections";
 import { PageSectionsRenderer } from "@/components/page-sections-renderer";
 import type { Page } from "@/lib/content/pages";
  
@@ -47,11 +48,11 @@ export default async function ServicePage({
  
   return (
     <>
-      <PageHero eyebrow="What we do" title={service.title} intro={service.summary} />
+      <PageHero eyebrow="What we do" title={service.title} intro={service.intro || service.summary} />
       <Section>
-        <Container className="max-w-2xl">
+        <Container>
           {service.featured_image_url && (
-            <div className="relative mb-10 aspect-video w-full overflow-hidden rounded-2xl">
+            <div className="relative mb-12 aspect-video w-full max-w-3xl overflow-hidden rounded-2xl">
               <Image
                 src={service.featured_image_url}
                 alt={service.featured_image_alt ?? ""}
@@ -62,11 +63,13 @@ export default async function ServicePage({
             </div>
           )}
           <PageSectionsRenderer sections={sections} />
-          <div className="mt-10">
-            <PrimaryButton href="/contact">
-              Talk to us about {service.title.toLowerCase()}
-            </PrimaryButton>
-          </div>
+          {!hasOwnCallToAction(sections) && (
+            <div className="mt-10">
+              <PrimaryButton href="/contact">
+                Talk to us about {service.title.toLowerCase()}
+              </PrimaryButton>
+            </div>
+          )}
         </Container>
       </Section>
     </>
