@@ -2,14 +2,17 @@ import type { Metadata } from "next";
 import { PageHero } from "@/components/page-hero";
 import { Container, Section, PrimaryButton } from "@/components/ui";
 import { TestimonialCard } from "@/components/testimonial-card";
-import { TESTIMONIALS } from "@/lib/content/testimonials";
+import { getPublishedTestimonials } from "@/lib/content/testimonials";
 
 export const metadata: Metadata = {
   title: "Clients | Iconos Group",
   description: "What our clients say about working with Iconos Group.",
 };
 
-export default function ClientsPage() {
+export default async function ClientsPage() {
+  // Same published testimonials as the homepage, managed in /admin/testimonials.
+  const testimonials = await getPublishedTestimonials();
+
   return (
     <>
       <PageHero
@@ -19,15 +22,17 @@ export default function ClientsPage() {
       />
       <Section>
         <Container>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {TESTIMONIALS.map((t) => (
-              <TestimonialCard key={t.attribution} {...t} />
-            ))}
-          </div>
-          <p className="mt-6 text-xs text-neutral-400">
-            Testimonials pending final client sign-off — see Q23 of the
-            project questionnaire.
-          </p>
+          {testimonials.length > 0 ? (
+            <ul className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              {testimonials.map((t) => (
+                <li key={t.id}>
+                  <TestimonialCard {...t} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-brand-dark/75">Client stories are coming soon.</p>
+          )}
         </Container>
       </Section>
       <Section tint>

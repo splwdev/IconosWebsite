@@ -1,27 +1,34 @@
+import { createClient } from "@/lib/supabase/server";
+import { PUBLIC_TESTIMONIAL_COLUMNS } from "./testimonials-schema";
+
+/** Shape the public site renders (TestimonialCard). */
 export interface Testimonial {
+  id: string;
   quote: string;
+  /** The person's name. */
   attribution: string;
-  logo_url?: string | null;
-  logo_alt?: string | null;
+  /** Position and company — optional second line. */
+  role: string;
+  logo_url: string | null;
+  logo_alt: string | null;
 }
- 
-// Placeholder content — Q23 confirms Iconos has a small number of real
-// testimonials and will confirm permission with each client before use.
-// Replace before launch.
-export const TESTIMONIALS: Testimonial[] = [
-  {
-    quote:
-      "Iconos feel like part of our own team — commercially sharp, and never a blocker.",
-    attribution: "Founder, SaaS scale-up",
-  },
-  {
-    quote:
-      "A predictable monthly cost meant we finally asked the questions we'd been avoiding.",
-    attribution: "COO, EdTech company",
-  },
-  {
-    quote:
-      "They've genuinely helped us get deals across the line, not just review paperwork after the fact.",
-    attribution: "Sales Director, Health tech",
-  },
-];
+
+/**
+ * Published testimonials in display order. RLS only returns published
+ * rows to the public, but the status filter is kept explicit so a signed-in
+ * staff member previewing the site doesn't see drafts either.
+ */
+export async function getPublishedTestimonials(): Promise<Testimonial[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("testimonials")
+    .select(PUBLIC_TESTIMONIAL_COLUMNS)
+    .eq("status", "published")
+    .order("sort_order", { ascending: true });
+
+  if (error) {
+    console.error("[testimonials] Failed to load:", error.message);
+    return [];
+  }
+  return (data as Testimonial[] | null) ?? [];
+}
