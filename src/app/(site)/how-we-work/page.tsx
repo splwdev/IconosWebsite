@@ -43,7 +43,7 @@ export default async function HowWeWorkPage() {
               <p className="mb-3 text-xs font-bold uppercase tracking-widest text-brand-accent">
                 {program.tag}
               </p>
-              <h2 className="mb-3 text-lg font-semibold text-brand-dark">{program.title}</h2>
+              <h2 className="mb-3 text-h3 font-semibold text-brand-dark">{program.title}</h2>
               <p className="text-sm leading-relaxed text-neutral-600">{program.summary}</p>
             </Link>
           ))}

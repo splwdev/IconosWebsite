@@ -21,7 +21,7 @@ export function TestimonialCard({ quote, attribution, role, logo_url, logo_alt, 
         </div>
       )}
       <blockquote className="flex-1">
-        <p className="text-[15px] leading-relaxed text-brand-dark">&ldquo;{quote}&rdquo;</p>
+        <p className="text-body text-brand-dark">&ldquo;{quote}&rdquo;</p>
       </blockquote>
       <figcaption className="mt-6">
         <span className="block text-sm font-semibold text-brand-dark">{attribution}</span>

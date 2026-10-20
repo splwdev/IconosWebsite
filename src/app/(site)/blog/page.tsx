@@ -50,7 +50,7 @@ export default async function BlogIndexPage() {
                     <p className="mb-2 text-xs font-bold uppercase tracking-wide text-brand-accent">
                       {post.category}
                     </p>
-                    <h2 className="mb-2 font-semibold leading-snug text-brand-dark">
+                    <h2 className="mb-2 text-h3 font-semibold text-brand-dark">
                       {post.title}
                     </h2>
                     <p className="text-sm text-neutral-500">{post.excerpt}</p>

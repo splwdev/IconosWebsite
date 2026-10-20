@@ -15,8 +15,9 @@ export function SiteFooter() {
           <Image
             src="/logo.png"
             alt="Iconos Group"
-            width={192}
-            height={142}
+            width={576}
+            height={410}
+            sizes="112px"
             className="h-20 w-auto"
           />
         </div>

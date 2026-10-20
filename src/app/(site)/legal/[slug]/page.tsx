@@ -32,7 +32,7 @@ export default async function LegalPage({
     <>
       <PageHero title={page.title} />
       <Section>
-        <Container className="max-w-2xl space-y-4 text-[15px] leading-relaxed text-neutral-700">
+        <Container className="max-w-2xl space-y-4 text-body text-neutral-700">
           {page.pendingClientReview && (
             <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
               This page contains placeholder text. Final wording is pending

@@ -62,6 +62,23 @@ page-sections system (still fully editable in /admin/pages → Homepage).
   code first, then apply it — older code skips the new section types.
 - After applying: upload hero, issues and founder images in admin.
 
+## Theme typography (Oct 2026)
+- Themes now set a **main font** and a **headings font** separately (the old
+  single dropdown only ever changed the headings font).
+- Themes have a **font size scale**: H1–H4, Body, Small, each with a desktop
+  and mobile px size. Rendered as fluid `clamp()` CSS variables
+  (`--text-h1`…) and used through Tailwind classes `text-h1` … `text-small`
+  and `text-lead`. Use these on public pages instead of fixed sizes.
+- Themes saved before this get today's sizes by default (no migration).
+- Theme tokens are now re-validated on every read before going into the
+  `<style>` tag; an invalid stored theme falls back to the built-in one.
+- Still true: **no theme is published**, so the site runs on the built-in
+  fallback (same values as Concept 1). Publish Concept 1 to make theme edits
+  live without Preview.
+- Header logo replaced with a sharp 576×410 render from the vector logo in
+  the Launch Studio guidelines (page 22); header height now matches the
+  wireframe.
+
 ## Outstanding / backlog, roughly in priority order
 1. **Header nav**: dropdowns should reveal on hover, not require a click —
    keep keyboard/touch accessibility (currently uses `<details>/<summary>`

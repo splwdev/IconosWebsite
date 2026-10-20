@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import type { Theme } from "./types";
+import { DEFAULT_TYPE_SCALE, themeTokensSchema, type Theme } from "./types";
 
 export const PREVIEW_COOKIE = "iconos_theme_preview";
 
@@ -21,6 +21,7 @@ const FALLBACK_THEME: Theme = {
       white: "#FFFFFF",
     },
     radius: "pill",
+    type_scale: DEFAULT_TYPE_SCALE,
   },
   notes: null,
   updated_at: new Date().toISOString(),
@@ -58,8 +59,9 @@ export async function getActiveTheme(): Promise<ActiveThemeResult> {
       .eq("id", previewId)
       .maybeSingle();
 
-    if (data) {
-      return { theme: data as Theme, isPreview: true };
+    const previewTheme = data ? withValidTokens(data as Theme) : null;
+    if (previewTheme) {
+      return { theme: previewTheme, isPreview: true };
     }
   }
 
@@ -69,5 +71,21 @@ export async function getActiveTheme(): Promise<ActiveThemeResult> {
     .eq("status", "published")
     .maybeSingle();
 
-  return { theme: (published as Theme) ?? FALLBACK_THEME, isPreview: false };
+  const publishedTheme = published ? withValidTokens(published as Theme) : null;
+  return { theme: publishedTheme ?? FALLBACK_THEME, isPreview: false };
+}
+
+/**
+ * Tokens come from the database and end up inside a <style> tag, so they're
+ * re-validated on every read rather than trusted. This also fills defaults
+ * for fields added after a theme was saved (e.g. type_scale). An invalid
+ * theme returns null, and the caller falls back to the built-in theme.
+ */
+export function withValidTokens(theme: Theme): Theme | null {
+  const parsed = themeTokensSchema.safeParse(theme.tokens);
+  if (!parsed.success) {
+    console.error(`[theme] "${theme.name}" has invalid tokens, using fallback:`, parsed.error.issues);
+    return null;
+  }
+  return { ...theme, tokens: parsed.data };
 }

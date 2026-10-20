@@ -18,7 +18,7 @@ export default function WhoWeArePage() {
       />
 
       <Section>
-        <Container className="max-w-2xl space-y-5 text-[15px] leading-relaxed text-neutral-700">
+        <Container className="max-w-2xl space-y-5 text-body text-neutral-700">
           <p>
             By working with sales teams, Iconos Group helps to maximise
             profitability by treating the causes of missed opportunities
@@ -40,16 +40,16 @@ export default function WhoWeArePage() {
           <div className="mx-auto aspect-[4/5] w-full max-w-sm rounded-3xl bg-brand-tint" />
           <div>
             <Eyebrow>Our founder</Eyebrow>
-            <h2 className="text-3xl font-semibold leading-tight text-brand-dark">
+            <h2 className="text-h2 font-semibold text-brand-dark">
               Erika Moralez Perez
             </h2>
-            <p className="mt-5 text-[15px] leading-relaxed text-neutral-700">
+            <p className="mt-5 text-body text-neutral-700">
               Iconos is led by Erika Moralez Perez, a commercial lawyer who
               combines years of experience in legal practice with a decade
               of business management in international IT and software
               companies.
             </p>
-            <p className="mt-4 text-[15px] leading-relaxed text-neutral-700">
+            <p className="mt-4 text-body text-neutral-700">
               Erika has assembled a team of experienced, fully qualified,
               independent lawyers, as well as like-minded solicitors, to
               deliver a flexible and value-added legal service.
@@ -60,7 +60,7 @@ export default function WhoWeArePage() {
 
       <Section>
         <Container className="text-center">
-          <h2 className="text-2xl font-semibold text-brand-dark">
+          <h2 className="text-h2 font-semibold text-brand-dark">
             Want to see how we work with businesses like yours?
           </h2>
           <div className="mt-6">

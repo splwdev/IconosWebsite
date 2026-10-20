@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { contrastRatio, checkThemeContrast } from "./contrast";
-import type { ThemeTokens } from "./types";
+import { DEFAULT_TYPE_SCALE, type ThemeTokens } from "./types";
 
 describe("contrastRatio", () => {
   it("returns 21 for pure black on pure white", () => {
@@ -31,6 +31,7 @@ describe("checkThemeContrast", () => {
       cream: "#F3F1EE",
       white: "#FFFFFF",
     },
+    type_scale: DEFAULT_TYPE_SCALE,
   };
 
   it("passes for the concept-2 (burgundy) palette", () => {
