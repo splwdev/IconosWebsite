@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import type { PageSection, MediaSize } from "@/lib/content/page-sections";
 import { YouTubeEmbed } from "@/components/youtube-embed";
 import { TestimonialCard } from "@/components/testimonial-card";
+import { getPublishedTestimonials } from "@/lib/content/testimonials";
 import { getPublishedPosts } from "@/lib/blog/posts";
 import { createClient } from "@/lib/supabase/server";
 import type { Page } from "@/lib/content/pages";
@@ -280,13 +281,7 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
 
     case "testimonials": {
       const { eyebrow, heading, button_label, button_href } = section.content;
-      const supabase = await createClient();
-      const { data: testimonialRows } = await supabase
-        .from("testimonials")
-        .select("quote, attribution, logo_url, logo_alt")
-        .eq("status", "published")
-        .order("sort_order", { ascending: true });
-      const testimonials = testimonialRows ?? [];
+      const testimonials = await getPublishedTestimonials();
       if (testimonials.length === 0) return null;
 
       return (
@@ -297,7 +292,7 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
           </div>
           <ul className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
             {testimonials.map((t) => (
-              <li key={t.attribution}>
+              <li key={t.id}>
                 <TestimonialCard {...t} onTint={section.background === "tint"} />
               </li>
             ))}

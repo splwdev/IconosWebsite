@@ -15,6 +15,7 @@ const inputClass =
 export function TestimonialRow({ testimonial }: { testimonial: TestimonialRowType }) {
   const [quote, setQuote] = useState(testimonial.quote);
   const [attribution, setAttribution] = useState(testimonial.attribution);
+  const [role, setRole] = useState(testimonial.role ?? "");
   const [logoUrl, setLogoUrl] = useState(testimonial.logo_url);
   const [logoAlt, setLogoAlt] = useState(testimonial.logo_alt ?? "");
   const [isSaving, startSaving] = useTransition();
@@ -26,6 +27,7 @@ export function TestimonialRow({ testimonial }: { testimonial: TestimonialRowTyp
   const dirty =
     quote !== testimonial.quote ||
     attribution !== testimonial.attribution ||
+    role !== (testimonial.role ?? "") ||
     logoUrl !== testimonial.logo_url ||
     logoAlt !== (testimonial.logo_alt ?? "");
  
@@ -35,7 +37,7 @@ export function TestimonialRow({ testimonial }: { testimonial: TestimonialRowTyp
     run(async () => {
       const result = await saveTestimonial(
         testimonial.id,
-        { quote, attribution, logo_url: logoUrl, logo_alt: logoAlt, sort_order: testimonial.sort_order },
+        { quote, attribution, role, logo_url: logoUrl, logo_alt: logoAlt, sort_order: testimonial.sort_order },
         status ? { status } : undefined
       );
       setMessage(
@@ -89,18 +91,27 @@ export function TestimonialRow({ testimonial }: { testimonial: TestimonialRowTyp
               onChange={(e) => setQuote(e.target.value)}
             />
           </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-neutral-600">
-              Attribution{" "}
-              <span className="font-normal text-neutral-400">
-                (e.g. &ldquo;Founder, SaaS scale-up&rdquo;)
-              </span>
-            </label>
-            <input
-              className={inputClass}
-              value={attribution}
-              onChange={(e) => setAttribution(e.target.value)}
-            />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-neutral-600">
+                Name{" "}
+                <span className="font-normal text-neutral-400">(e.g. &ldquo;Ben Stokes&rdquo;)</span>
+              </label>
+              <input
+                className={inputClass}
+                value={attribution}
+                onChange={(e) => setAttribution(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-neutral-600">
+                Position &amp; company{" "}
+                <span className="font-normal text-neutral-400">
+                  (optional, e.g. &ldquo;Director, Elite Consultancy Group&rdquo;)
+                </span>
+              </label>
+              <input className={inputClass} value={role} onChange={(e) => setRole(e.target.value)} />
+            </div>
           </div>
         </div>
  
