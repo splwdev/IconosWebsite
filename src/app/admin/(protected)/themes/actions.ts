@@ -26,10 +26,11 @@ export async function previewTheme(themeId: string) {
   redirect("/");
 }
  
+/** Clears the preview cookie and returns to the Themes list, where previews start. */
 export async function exitPreview() {
   const cookieStore = await cookies();
   cookieStore.delete(PREVIEW_COOKIE);
-  redirect("/");
+  redirect("/admin/themes");
 }
  
 /**
