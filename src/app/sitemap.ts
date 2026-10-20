@@ -28,7 +28,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .from("pages")
       .select("page_type, parent_section, slug, updated_at")
       .eq("status", "published")
-      .neq("page_type", "home"),
+      // home and overview pages are already static entries above (/ and
+      // /how-we-work etc.); listing them here would duplicate those URLs.
+      .not("page_type", "in", "(home,overview)"),
     getPublishedPosts(),
   ]);
  

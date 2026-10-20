@@ -71,12 +71,10 @@ describe("pageSectionSchema", () => {
   });
 });
 
-describe("0020_homepage_redesign.sql", () => {
-  const sql = readFileSync(
-    resolve(process.cwd(), "supabase/migrations/0020_homepage_redesign.sql"),
-    "utf8"
-  );
-  const rows = [...sql.matchAll(/\(v_home_id, '(\w+)', '(\w+)', \$json\$([\s\S]*?)\$json\$::jsonb, (\d+)\)/g)].map(
+/** Section rows seeded by a migration: `(v_x_id, 'type', 'background', $json$…$json$::jsonb, n)`. */
+function seededSections(file: string) {
+  const sql = readFileSync(resolve(process.cwd(), "supabase/migrations", file), "utf8");
+  const rows = [...sql.matchAll(/\(v_\w+_id, '(\w+)', '(\w+)', \$json\$([\s\S]*?)\$json\$::jsonb, (\d+)\)/g)].map(
     ([, section_type, background, json, order]) => ({
       section_type,
       background,
@@ -84,6 +82,11 @@ describe("0020_homepage_redesign.sql", () => {
       order: Number(order),
     })
   );
+  return { sql, rows };
+}
+
+describe("0020_homepage_redesign.sql", () => {
+  const { rows } = seededSections("0020_homepage_redesign.sql");
 
   it("seeds the eight sections from the mockup, in order", () => {
     expect(rows.map((r) => r.section_type)).toEqual([
@@ -99,19 +102,51 @@ describe("0020_homepage_redesign.sql", () => {
     expect(rows.map((r) => r.order)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
   });
 
-  it.each(["hero", "services_grid", "issues", "features", "media_text", "testimonials", "blog_teaser", "cta"])(
+  it.each(rows.map((r) => [r.section_type, r] as const))(
     "%s row passes the application schema (so the renderer won't skip it)",
-    (type) => {
-      const row = rows.find((r) => r.section_type === type);
+    (_type, row) => {
+      const result = pageSectionSchema.safeParse(row);
+      expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+    }
+  );
+});
+
+describe("0022_how_we_work_overview.sql", () => {
+  const { sql, rows } = seededSections("0022_how_we_work_overview.sql");
+
+  it("seeds the How We Work sections from the mockup, in order", () => {
+    expect(rows.map((r) => r.section_type)).toEqual(["programs_highlight", "steps", "cta"]);
+    expect(rows.map((r) => r.order)).toEqual([0, 1, 2]);
+  });
+
+  it.each(rows.map((r) => [r.section_type, r] as const))(
+    "%s row passes the application schema",
+    (_type, row) => {
       const result = pageSectionSchema.safeParse(row);
       expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
     }
   );
 
-  it("allows every application section type in the DB constraint", () => {
+  it("seeds four getting-started steps", () => {
+    const steps = rows.find((r) => r.section_type === "steps");
+    expect(steps?.content.items.map((i: { title: string }) => i.title)).toEqual([
+      "An initial conversation",
+      "A clear proposal",
+      "We get to work",
+      "Ongoing support",
+    ]);
+  });
+
+  it("is the latest section-type constraint and allows every application section type", () => {
     const constraint = sql.match(/check \(section_type in \(([\s\S]*?)\)\)/)?.[1] ?? "";
     for (const type of SECTION_TYPES) {
       expect(constraint).toContain(`'${type}'`);
     }
+  });
+
+  it("only updates program wording that is still the original seeded text", () => {
+    const updates = sql.match(/update public\.pages[\s\S]*?;/g) ?? [];
+    expect(updates.length).toBeGreaterThan(0);
+    for (const u of updates) expect(u).toMatch(/\n\s+and (summary|tag|title) = '/);
   });
 });

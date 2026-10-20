@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
+  isSingletonPage,
   pageInputSchema,
   slugify,
   type PageInput,
@@ -28,7 +29,7 @@ interface PublicPathInfo {
  
 function revalidatePublicPaths(page: PublicPathInfo) {
   revalidatePath("/admin/pages");
-  if (page.page_type === "custom") {
+  if (page.page_type === "custom" || page.page_type === "overview") {
     revalidatePath(`/${page.slug}`);
   } else if (page.page_type === "home") {
     revalidatePath("/");
@@ -49,6 +50,7 @@ const BLANK_TITLES: Record<PageType, string> = {
   program: "Untitled program",
   custom: "Untitled page",
   home: "Homepage", // unreachable in practice — no UI ever creates a second 'home' page
+  overview: "Overview", // likewise: overview pages are seeded by migration, one per section
 };
  
 /**
@@ -130,8 +132,9 @@ export async function savePage(
  
   // Slug only auto-follows the title while still a draft — including on
   // the very save that publishes it, which is the last moment it can
-  // still change before locking permanently.
-  if (current.status !== "published") {
+  // still change before locking permanently. Never for the homepage or an
+  // overview page: their URL is fixed (an overview's slug *is* its route).
+  if (current.status !== "published" && !isSingletonPage(current.page_type)) {
     updatePayload.slug = await generateUniquePageSlug(
       supabase,
       current.page_type,
@@ -141,7 +144,9 @@ export async function savePage(
     );
   }
  
-  if (options?.status === "published" && current.status !== "published") {
+  if (isSingletonPage(current.page_type)) {
+    // Always published; ignore any status change.
+  } else if (options?.status === "published" && current.status !== "published") {
     updatePayload.status = "published";
   } else if (options?.status === "draft" && current.status === "published") {
     updatePayload.status = "draft";
@@ -238,8 +243,17 @@ export async function publishPage(pageId: string) {
   revalidatePublicPaths(data);
 }
  
+/** The UI hides Unpublish/Delete for these; this enforces it server-side too. */
+async function assertNotSingleton(supabase: Awaited<ReturnType<typeof createClient>>, pageId: string) {
+  const { data } = await supabase.from("pages").select("page_type").eq("id", pageId).maybeSingle();
+  if (data && isSingletonPage(data.page_type)) {
+    throw new Error("The homepage and section overview pages can't be unpublished or deleted.");
+  }
+}
+
 export async function unpublishPage(pageId: string) {
   const supabase = await createClient();
+  await assertNotSingleton(supabase, pageId);
   const { data, error } = await supabase
     .from("pages")
     .update({ status: "draft" })
@@ -253,6 +267,7 @@ export async function unpublishPage(pageId: string) {
  
 export async function deletePage(pageId: string) {
   const supabase = await createClient();
+  await assertNotSingleton(supabase, pageId);
   const { data, error } = await supabase
     .from("pages")
     .delete()

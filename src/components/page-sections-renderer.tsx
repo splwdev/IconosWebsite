@@ -11,6 +11,7 @@ import type { Page } from "@/lib/content/pages";
 import { HeroSection } from "@/components/sections/hero-section";
 import { IssuesSection } from "@/components/sections/issues-section";
 import { FeaturesSection } from "@/components/sections/features-section";
+import { StepsSection } from "@/components/sections/steps-section";
 import {
   ButtonLink,
   SectionEyebrow,
@@ -72,6 +73,9 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
 
     case "features":
       return <FeaturesSection content={section.content} />;
+
+    case "steps":
+      return <StepsSection content={section.content} onTint={section.background === "tint"} />;
 
     case "text":
       // Tiptap HTML, sanitized server-side at save time (see saveSections

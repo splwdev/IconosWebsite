@@ -23,7 +23,13 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Page } from "@/lib/content/pages";
-import { pageInputSchema, slugify, type PageInput } from "@/lib/content/pages";
+import {
+  getPagePublicPath,
+  isSingletonPage,
+  pageInputSchema,
+  slugify,
+  type PageInput,
+} from "@/lib/content/pages";
 import {
   SECTION_TYPES,
   SECTION_TYPE_LABELS,
@@ -50,6 +56,7 @@ import {
   type HeroCard,
   type IssuesSectionContent,
   type FeaturesSectionContent,
+  type StepsSectionContent,
 } from "@/lib/content/page-sections";
 import { isValidYouTubeUrl } from "@/lib/content/youtube";
 import { generateMetaDescription } from "@/lib/content/generate-meta-description";
@@ -69,6 +76,7 @@ const TYPE_LABEL: Record<Page["page_type"], string> = {
   program: "Program",
   custom: "Custom page",
   home: "Homepage",
+  overview: "Section overview",
 };
  
 const MEDIA_SIZE_LABEL: Record<(typeof MEDIA_SIZES)[number], string> = {
@@ -908,6 +916,69 @@ function FeaturesSectionFields({
   );
 }
 
+function StepsSectionFields({
+  content,
+  onChange,
+}: {
+  content: StepsSectionContent;
+  onChange: (content: StepsSectionContent) => void;
+}) {
+  function updateItem(index: number, field: "title" | "body", value: string) {
+    onChange({ ...content, items: content.items.map((it, i) => (i === index ? { ...it, [field]: value } : it)) });
+  }
+  function moveItem(index: number, delta: -1 | 1) {
+    const target = index + delta;
+    if (target < 0 || target >= content.items.length) return;
+    onChange({ ...content, items: arrayMove(content.items, index, target) });
+  }
+
+  return (
+    <div className="space-y-4">
+      <EyebrowField value={content.eyebrow} onChange={(eyebrow) => onChange({ ...content, eyebrow })} />
+      <Field label="Heading">
+        <input className={inputClass} value={content.heading} onChange={(e) => onChange({ ...content, heading: e.target.value })} />
+      </Field>
+      <Field label="Intro text" hint="optional">
+        <input className={inputClass} value={content.intro} onChange={(e) => onChange({ ...content, intro: e.target.value })} />
+      </Field>
+      <div className="space-y-2">
+        <span className="block text-xs font-medium text-neutral-600">
+          Steps <span className="font-normal text-neutral-400">(numbered 01, 02… automatically; four fit best)</span>
+        </span>
+        {content.items.map((item, index) => (
+          <div key={index} className="flex gap-2 rounded-lg border border-neutral-200 p-3">
+            <span className="w-6 pt-2 text-xs font-medium tabular-nums text-neutral-400">
+              {String(index + 1).padStart(2, "0")}
+            </span>
+            <div className="flex-1 space-y-2">
+              <input className={inputClass} placeholder="Step title" value={item.title} onChange={(e) => updateItem(index, "title", e.target.value)} />
+              <textarea rows={2} className={inputClass} placeholder="Short description" value={item.body} onChange={(e) => updateItem(index, "body", e.target.value)} />
+            </div>
+            <div className="flex flex-col items-end gap-1 text-xs">
+              <button type="button" onClick={() => moveItem(index, -1)} className="text-neutral-500" aria-label={`Move step ${index + 1} up`}>↑</button>
+              <button type="button" onClick={() => moveItem(index, 1)} className="text-neutral-500" aria-label={`Move step ${index + 1} down`}>↓</button>
+              <button
+                type="button"
+                onClick={() => onChange({ ...content, items: content.items.filter((_, i) => i !== index) })}
+                className="font-medium text-red-600"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => onChange({ ...content, items: [...content.items, { title: "", body: "" }] })}
+          className="text-xs font-medium text-neutral-600 underline"
+        >
+          + Add step
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Sortable card wrapper
 // ---------------------------------------------------------------------------
@@ -1097,6 +1168,12 @@ function SectionCard({
           onChange={(content) => onChange({ ...section, content } as PageSection)}
         />
       )}
+      {section.section_type === "steps" && (
+        <StepsSectionFields
+          content={section.content}
+          onChange={(content) => onChange({ ...section, content } as PageSection)}
+        />
+      )}
       {section.section_type === "blog_teaser" && (
         <SmartSectionFields<BlogTeaserSectionContent>
           content={section.content}
@@ -1165,22 +1242,18 @@ export function PageEditorForm({
  
   const titleValue = watch("title");
   const isPublished = page.status === "published";
-  const previewSlug = isPublished ? page.slug : slugify(titleValue || "");
-  const previewPath =
-    page.page_type === "custom"
-      ? `/${previewSlug}`
-      : page.page_type === "home"
-        ? "/"
-        : `/${page.parent_section}/${previewSlug}`;
- 
-  // Homepage gets access to every section type, including the four
-  // live-data ones; every other page type sticks to the original generic
-  // five — services_grid etc. wouldn't make sense standalone on a service
-  // or custom page.
-  const availableSectionTypes =
-    page.page_type === "home"
-      ? SECTION_TYPES
-      : SECTION_TYPES.filter((t) => !HOME_ONLY_SECTION_TYPES.includes(t));
+  const isSingleton = isSingletonPage(page.page_type);
+  const isOverview = page.page_type === "overview";
+  const previewSlug = isPublished || isSingleton ? page.slug : slugify(titleValue || "");
+  const previewPath = getPagePublicPath({ ...page, slug: previewSlug });
+
+  // The homepage and section overview pages get every section type,
+  // including the live-data ones (an overview lists its section's pages);
+  // other page types stick to the generic ones — services_grid etc.
+  // wouldn't make sense standalone on a service or custom page.
+  const availableSectionTypes = isSingleton
+    ? SECTION_TYPES
+    : SECTION_TYPES.filter((t) => !HOME_ONLY_SECTION_TYPES.includes(t));
  
   function addSection(type: SectionType) {
     setSections((prev) => [...prev, withLocalId(createBlankSection(type))]);
@@ -1323,6 +1396,7 @@ export function PageEditorForm({
           case "issues":
             return [s.content.heading, ...s.content.primary_items, ...s.content.secondary_items].join(" ");
           case "features":
+          case "steps":
             return [s.content.heading, s.content.intro, ...s.content.items.map((i) => `${i.title} ${i.body}`)].join(" ");
           default:
             return "";
@@ -1362,7 +1436,10 @@ export function PageEditorForm({
  
         {page.page_type !== "home" && (
           <div>
-            <label className="mb-1 block text-sm font-medium text-neutral-700">Title</label>
+            <label className="mb-1 block text-sm font-medium text-neutral-700">
+              {isOverview ? "Page heading" : "Title"}
+              {isOverview && <span className="font-normal text-neutral-400"> (the H1 at the top of the page)</span>}
+            </label>
             <input className={inputClass} {...register("title")} />
             {errors.title && <p className="mt-1 text-xs text-red-600">{errors.title.message}</p>}
           </div>
@@ -1373,13 +1450,15 @@ export function PageEditorForm({
           <div className="flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm">
             <span className="font-medium text-neutral-700">{previewPath || "…"}</span>
           </div>
-          {page.page_type !== "home" && (
+          {isOverview ? (
+            <p className="mt-1 text-xs text-neutral-400">Fixed — this is the section&apos;s overview page.</p>
+          ) : page.page_type !== "home" ? (
             <p className="mt-1 text-xs text-neutral-400">
               {isPublished
                 ? "Locked now that this page is published, so existing links keep working."
                 : "Generated automatically from the title above."}
             </p>
-          )}
+          ) : null}
         </div>
  
         {page.page_type === "custom" && (
@@ -1402,12 +1481,14 @@ export function PageEditorForm({
           </div>
         )}
  
-        {page.page_type === "program" && (
+        {(page.page_type === "program" || isOverview) && (
           <div>
             <label className="mb-1 block text-sm font-medium text-neutral-700">
-              Tag{" "}
+              {isOverview ? "Eyebrow" : "Tag"}{" "}
               <span className="font-normal text-neutral-400">
-                (e.g. &ldquo;Subscription&rdquo;, &ldquo;Three tiers&rdquo;)
+                {isOverview
+                  ? "(small label above the heading, e.g. \u201cHow we work\u201d)"
+                  : "(e.g. \u201cSubscription\u201d, \u201cThree tiers\u201d)"}
               </span>
             </label>
             <input className={inputClass} {...register("tag")} />
@@ -1417,9 +1498,11 @@ export function PageEditorForm({
         {page.page_type !== "home" && (
           <div>
             <label className="mb-1 block text-sm font-medium text-neutral-700">
-              Summary{" "}
+              {isOverview ? "Intro" : "Summary"}{" "}
               <span className="font-normal text-neutral-400">
-                (shown on the overview page and in search results)
+                {isOverview
+                  ? "(paragraph under the heading; also used in search results if no meta description is set)"
+                  : "(shown on the overview page and in search results)"}
               </span>
             </label>
             <textarea rows={2} className={inputClass} {...register("summary")} />
@@ -1515,10 +1598,10 @@ export function PageEditorForm({
             disabled={isSaving}
             className="rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50"
           >
-            {isSaving ? "Saving…" : page.page_type === "home" ? "Save changes" : "Save draft"}
+            {isSaving ? "Saving…" : isSingleton ? "Save changes" : "Save draft"}
           </button>
  
-          {page.page_type === "home" ? null : page.status === "published" ? (
+          {isSingleton ? null : page.status === "published" ? (
             <button
               type="button"
               disabled={isPublishing}
@@ -1538,7 +1621,7 @@ export function PageEditorForm({
             </button>
           )}
  
-          {page.page_type !== "home" && (
+          {!isSingleton && (
             <button
               type="button"
               disabled={isDeleting}

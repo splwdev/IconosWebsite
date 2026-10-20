@@ -1,12 +1,39 @@
 import { z } from "zod";
  
-export const PAGE_TYPES = ["service", "program", "custom", "home"] as const;
+export const PAGE_TYPES = ["service", "program", "custom", "home", "overview"] as const;
 export type PageType = (typeof PAGE_TYPES)[number];
  
 export const PARENT_SECTIONS = ["what-we-do", "how-we-work"] as const;
 export type ParentSection = (typeof PARENT_SECTIONS)[number];
  
 export type PageStatus = "draft" | "published";
+
+/**
+ * Section overview pages (/how-we-work, /what-we-do) are singletons keyed by
+ * slug, with parent_section null — deliberately, so none of the queries that
+ * list a section's child pages by parent_section (nav dropdowns, programs
+ * and services grids, [slug] routes) ever pick them up.
+ */
+export const OVERVIEW_SLUGS = ["how-we-work", "what-we-do"] as const;
+export type OverviewSlug = (typeof OVERVIEW_SLUGS)[number];
+
+/** Pages that always exist and are always published: no unpublish, delete or slug changes. */
+export function isSingletonPage(pageType: PageType): boolean {
+  return pageType === "home" || pageType === "overview";
+}
+
+/** Public URL path for a page row. */
+export function getPagePublicPath(page: { page_type: PageType; parent_section: ParentSection | null; slug: string }): string {
+  switch (page.page_type) {
+    case "home":
+      return "/";
+    case "custom":
+    case "overview":
+      return `/${page.slug}`;
+    default:
+      return `/${page.parent_section}/${page.slug}`;
+  }
+}
  
 // Top-level route segments that already exist as static app routes.
 // A Custom Page's slug must never collide with any of these — checked
@@ -66,6 +93,28 @@ export const pageInputSchema = z
           code: z.ZodIssueCode.custom,
           path: ["slug"],
           message: `"${data.slug}" is a reserved URL and can't be used for a custom page`,
+        });
+      }
+    } else if (data.page_type === "overview") {
+      if (data.parent_section !== null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["parent_section"],
+          message: "Overview pages are identified by URL, not by section",
+        });
+      }
+      if (!(OVERVIEW_SLUGS as readonly string[]).includes(data.slug)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["slug"],
+          message: "Overview pages can only be /how-we-work or /what-we-do",
+        });
+      }
+      if (data.show_in_nav) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["show_in_nav"],
+          message: "Overview pages are already in the header nav",
         });
       }
     } else if (data.page_type === "home") {
