@@ -13,6 +13,22 @@ export interface Testimonial {
   logo_alt: string | null;
 }
 
+/** A single published testimonial, or null if it doesn't exist or isn't published. */
+export async function getPublishedTestimonial(id: string): Promise<Testimonial | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("testimonials")
+    .select(PUBLIC_TESTIMONIAL_COLUMNS)
+    .eq("id", id)
+    .eq("status", "published")
+    .maybeSingle();
+  if (error) {
+    console.error("[testimonials] Failed to load one:", error.message);
+    return null;
+  }
+  return (data as Testimonial | null) ?? null;
+}
+
 /**
  * Published testimonials in display order. RLS only returns published
  * rows to the public, but the status filter is kept explicit so a signed-in

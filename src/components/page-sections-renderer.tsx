@@ -12,6 +12,9 @@ import { HeroSection } from "@/components/sections/hero-section";
 import { IssuesSection } from "@/components/sections/issues-section";
 import { FeaturesSection } from "@/components/sections/features-section";
 import { StepsSection } from "@/components/sections/steps-section";
+import { TextChecklistSection } from "@/components/sections/text-checklist-section";
+import { ComparisonSection } from "@/components/sections/comparison-section";
+import { TestimonialSpotlightSection } from "@/components/sections/testimonial-spotlight-section";
 import {
   ButtonLink,
   SectionEyebrow,
@@ -77,11 +80,21 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
     case "steps":
       return <StepsSection content={section.content} onTint={section.background === "tint"} />;
 
+    case "text_checklist":
+      return <TextChecklistSection content={section.content} />;
+
+    case "comparison":
+      return <ComparisonSection content={section.content} />;
+
+    case "testimonial_spotlight":
+      return <TestimonialSpotlightSection content={section.content} onTint={section.background === "tint"} />;
+
     case "text":
       // Tiptap HTML, sanitized server-side at save time (see saveSections
       // in admin/(protected)/pages/actions.ts) — safe to render directly.
       return (
-        <div>
+        // Capped at a readable line length now that pages use the full width.
+        <div className="max-w-3xl">
           <SectionEyebrow>{section.content.eyebrow}</SectionEyebrow>
           <div className={PROSE_CLASS} dangerouslySetInnerHTML={{ __html: section.content.body }} />
         </div>

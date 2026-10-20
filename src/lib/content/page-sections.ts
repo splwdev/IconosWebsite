@@ -16,6 +16,9 @@ export const SECTION_TYPES = [
   "issues",
   "features",
   "steps",
+  "text_checklist",
+  "comparison",
+  "testimonial_spotlight",
 ] as const;
 export type SectionType = (typeof SECTION_TYPES)[number];
  
@@ -32,7 +35,10 @@ export const SECTION_TYPE_LABELS: Record<SectionType, string> = {
   blog_teaser: "Blog Teaser",
   issues: "Issues We Resolve",
   features: "Feature Columns",
-  steps: "Steps (numbered)",
+  steps: "Card Grid / Steps",
+  text_checklist: "Text + Checklist",
+  comparison: "Comparison",
+  testimonial_spotlight: "Testimonial Spotlight",
 };
  
 // These four render live data (published services/programs, testimonials,
@@ -256,14 +262,58 @@ export const featuresSectionContentSchema = z.object({
 });
 export type FeaturesSectionContent = z.infer<typeof featuresSectionContentSchema>;
 
-/** A numbered process, e.g. "Getting started" on How We Work. Numbers are automatic. */
+export const CARD_GRID_COLUMNS = [3, 4] as const;
+
+/**
+ * A grid of short title + description cards. Numbered (01, 02…) for a
+ * process like "Getting started"; un-numbered for benefits like "What you
+ * get". Stored as section_type "steps" — the name predates the
+ * un-numbered option.
+ */
 export const stepsSectionContentSchema = z.object({
   eyebrow: z.string().default(""),
   heading: z.string().default(""),
   intro: z.string().default(""),
+  numbered: z.boolean().default(true),
+  columns: z.union([z.literal(3), z.literal(4)]).default(4),
   items: z.array(featureItemSchema).default([]),
 });
 export type StepsSectionContent = z.infer<typeof stepsSectionContentSchema>;
+
+/** Lead paragraph(s) beside a bordered checklist card, e.g. "Ideal if…". */
+export const textChecklistSectionContentSchema = z.object({
+  /** Plain text; a blank line starts a new paragraph. */
+  body: z.string().default(""),
+  list_label: z.string().default(""),
+  items: lineList,
+});
+export type TextChecklistSectionContent = z.infer<typeof textChecklistSectionContentSchema>;
+
+const comparisonColumnSchema = z.object({
+  title: z.string().default(""),
+  items: lineList,
+});
+
+/** Two columns compared side by side; the second is highlighted (dark) as the recommended option. */
+export const comparisonSectionContentSchema = z.object({
+  eyebrow: z.string().default(""),
+  heading: z.string().default(""),
+  left: comparisonColumnSchema.default({}),
+  right: comparisonColumnSchema.default({}),
+});
+export type ComparisonSectionContent = z.infer<typeof comparisonSectionContentSchema>;
+
+/**
+ * One testimonial from /admin/testimonials, referenced by id rather than
+ * copied, so unpublishing it there removes it here too. Renders nothing for
+ * the quote if the testimonial is missing or unpublished.
+ */
+export const testimonialSpotlightSectionContentSchema = z.object({
+  testimonial_id: z.string().uuid().nullable().default(null),
+  button_label: z.string().default(""),
+  button_href: optionalHref,
+});
+export type TestimonialSpotlightSectionContent = z.infer<typeof testimonialSpotlightSectionContentSchema>;
  
 export const pageSectionSchema = z.discriminatedUnion("section_type", [
   z.object({
@@ -285,6 +335,21 @@ export const pageSectionSchema = z.discriminatedUnion("section_type", [
     section_type: z.literal("steps"),
     background: z.enum(SECTION_BACKGROUNDS),
     content: stepsSectionContentSchema,
+  }),
+  z.object({
+    section_type: z.literal("text_checklist"),
+    background: z.enum(SECTION_BACKGROUNDS),
+    content: textChecklistSectionContentSchema,
+  }),
+  z.object({
+    section_type: z.literal("comparison"),
+    background: z.enum(SECTION_BACKGROUNDS),
+    content: comparisonSectionContentSchema,
+  }),
+  z.object({
+    section_type: z.literal("testimonial_spotlight"),
+    background: z.enum(SECTION_BACKGROUNDS),
+    content: testimonialSpotlightSectionContentSchema,
   }),
   z.object({
     section_type: z.literal("text"),
@@ -334,6 +399,19 @@ export const pageSectionSchema = z.discriminatedUnion("section_type", [
 ]);
  
 export type PageSection = z.infer<typeof pageSectionSchema>;
+
+/**
+ * Whether a page's sections already end in their own call to action
+ * (a CTA section, or a spotlight with a button). Page templates only add
+ * their fallback "Talk to us about…" button when this is false.
+ */
+export function hasOwnCallToAction(sections: PageSection[]): boolean {
+  return sections.some(
+    (s) =>
+      s.section_type === "cta" ||
+      (s.section_type === "testimonial_spotlight" && Boolean(s.content.button_label && s.content.button_href))
+  );
+}
  
 export function createBlankSection(type: SectionType): PageSection {
   switch (type) {
@@ -450,7 +528,25 @@ export function createBlankSection(type: SectionType): PageSection {
       return {
         section_type: "steps",
         background: "tint",
-        content: { eyebrow: "", heading: "", intro: "", items: [] },
+        content: { eyebrow: "", heading: "", intro: "", numbered: true, columns: 4, items: [] },
+      };
+    case "text_checklist":
+      return {
+        section_type: "text_checklist",
+        background: "none",
+        content: { body: "", list_label: "", items: [] },
+      };
+    case "comparison":
+      return {
+        section_type: "comparison",
+        background: "none",
+        content: { eyebrow: "", heading: "", left: { title: "", items: [] }, right: { title: "", items: [] } },
+      };
+    case "testimonial_spotlight":
+      return {
+        section_type: "testimonial_spotlight",
+        background: "none",
+        content: { testimonial_id: null, button_label: "", button_href: "" },
       };
   }
 }

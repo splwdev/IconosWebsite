@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   SECTION_TYPES,
   createBlankSection,
+  hasOwnCallToAction,
   isSafeHref,
   pageSectionSchema,
 } from "./page-sections";
@@ -137,16 +138,86 @@ describe("0022_how_we_work_overview.sql", () => {
     ]);
   });
 
+  it("only updates program wording that is still the original seeded text", () => {
+    const updates = sql.match(/update public\.pages[\s\S]*?;/g) ?? [];
+    expect(updates.length).toBeGreaterThan(0);
+    for (const u of updates) expect(u).toMatch(/\n\s+and (summary|tag|title) = '/);
+  });
+});
+
+describe("0023_managed_legal_services_page.sql", () => {
+  const { sql, rows } = seededSections("0023_managed_legal_services_page.sql");
+
+  it("seeds the mockup's sections (spotlight is built with jsonb_build_object)", () => {
+    expect(rows.map((r) => r.section_type)).toEqual(["text_checklist", "steps", "comparison", "cta"]);
+    expect(sql).toMatch(/\(v_page_id, 'testimonial_spotlight', 'none',\s+jsonb_build_object/);
+  });
+
+  it.each(rows.map((r) => [r.section_type, r] as const))("%s row passes the application schema", (_t, row) => {
+    const result = pageSectionSchema.safeParse(row);
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+  });
+
+  it("uses an un-numbered 3-column card grid for 'What you get'", () => {
+    const grid = rows.find((r) => r.section_type === "steps");
+    expect(grid?.content).toMatchObject({ numbered: false, columns: 3 });
+    expect(grid?.content.items).toHaveLength(6);
+  });
+
+  it("only replaces the original seeded sections", () => {
+    expect(sql).toMatch(/<> 1/);
+    expect(sql).toMatch(/like '<p>Ongoing embedded legal support across corporate/);
+  });
+
   it("is the latest section-type constraint and allows every application section type", () => {
     const constraint = sql.match(/check \(section_type in \(([\s\S]*?)\)\)/)?.[1] ?? "";
     for (const type of SECTION_TYPES) {
       expect(constraint).toContain(`'${type}'`);
     }
   });
+});
 
-  it("only updates program wording that is still the original seeded text", () => {
-    const updates = sql.match(/update public\.pages[\s\S]*?;/g) ?? [];
-    expect(updates.length).toBeGreaterThan(0);
-    for (const u of updates) expect(u).toMatch(/\n\s+and (summary|tag|title) = '/);
+describe("new section defaults", () => {
+  it("existing Steps rows (saved before the options existed) stay numbered with 4 columns", () => {
+    const parsed = pageSectionSchema.parse({
+      section_type: "steps",
+      background: "tint",
+      content: { eyebrow: "Getting started", heading: "h", intro: "", items: [{ title: "a", body: "b" }] },
+    });
+    if (parsed.section_type !== "steps") throw new Error("wrong type");
+    expect(parsed.content).toMatchObject({ numbered: true, columns: 4 });
+  });
+
+  it("rejects a 5-column card grid", () => {
+    const result = pageSectionSchema.safeParse({ section_type: "steps", background: "none", content: { columns: 5 } });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a spotlight testimonial id that isn't a UUID", () => {
+    const result = pageSectionSchema.safeParse({
+      section_type: "testimonial_spotlight",
+      background: "none",
+      content: { testimonial_id: "1 or 1=1" },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("hasOwnCallToAction", () => {
+  const cta = createBlankSection("cta");
+  const spotlight = (label: string, href: string) => ({
+    section_type: "testimonial_spotlight" as const,
+    background: "none" as const,
+    content: { testimonial_id: null, button_label: label, button_href: href },
+  });
+
+  it("is true with a CTA section or a spotlight that has a button", () => {
+    expect(hasOwnCallToAction([cta])).toBe(true);
+    expect(hasOwnCallToAction([spotlight("Ask us", "/contact")])).toBe(true);
+  });
+
+  it("is false otherwise, so the page template adds its fallback button", () => {
+    expect(hasOwnCallToAction([createBlankSection("text"), spotlight("", "")])).toBe(false);
+    expect(hasOwnCallToAction([])).toBe(false);
   });
 });

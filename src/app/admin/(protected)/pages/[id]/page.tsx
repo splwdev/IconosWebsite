@@ -16,7 +16,17 @@ export default async function AdminPageEditorPage({
  
   if (!page) notFound();
  
-  const sections = await getPageSections(id);
- 
-  return <PageEditorForm page={page as Page} initialSections={sections} />;
+  const [sections, { data: testimonials }] = await Promise.all([
+    getPageSections(id),
+    // For the Testimonial Spotlight picker (RLS lets staff see drafts too).
+    supabase.from("testimonials").select("id, attribution, role, status").order("sort_order", { ascending: true }),
+  ]);
+
+  const testimonialOptions = (testimonials ?? []).map((t) => ({
+    id: t.id as string,
+    label: [t.attribution, t.role].filter(Boolean).join(" — "),
+    published: t.status === "published",
+  }));
+
+  return <PageEditorForm page={page as Page} initialSections={sections} testimonialOptions={testimonialOptions} />;
 }
