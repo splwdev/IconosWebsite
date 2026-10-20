@@ -79,6 +79,17 @@ page-sections system (still fully editable in /admin/pages → Homepage).
   the Launch Studio guidelines (page 22); header height now matches the
   wireframe.
 
+## How We Work page (Oct 2026)
+- New page_type `overview`: one editable singleton per section, keyed by
+  slug (`how-we-work`, later `what-we-do`), parent_section null so it never
+  appears in nav dropdowns or program/service grids. Always published;
+  can't be deleted, unpublished or re-slugged (UI and server actions).
+- Header band = the page's own Eyebrow / Page heading / Intro fields
+  (PageHero, now an inset rounded band on every inner page).
+- New `steps` section type (numbered process cards).
+- `/how-we-work` falls back to the old static layout if the overview row
+  is missing. Migration 0022 seeds it — apply after deploying the code.
+
 ## Outstanding / backlog, roughly in priority order
 1. **Header nav**: dropdowns should reveal on hover, not require a click —
    keep keyboard/touch accessibility (currently uses `<details>/<summary>`

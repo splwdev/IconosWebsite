@@ -15,6 +15,7 @@ export const SECTION_TYPES = [
   "blog_teaser",
   "issues",
   "features",
+  "steps",
 ] as const;
 export type SectionType = (typeof SECTION_TYPES)[number];
  
@@ -31,12 +32,14 @@ export const SECTION_TYPE_LABELS: Record<SectionType, string> = {
   blog_teaser: "Blog Teaser",
   issues: "Issues We Resolve",
   features: "Feature Columns",
+  steps: "Steps (numbered)",
 };
  
 // These four render live data (published services/programs, testimonials,
-// recent posts) and only make sense on the singleton homepage — the admin
-// editor filters the "+ Add section" list to these based on page_type,
-// though nothing at the schema/DB level actually forbids them elsewhere.
+// recent posts). They're offered on the homepage and section overview pages
+// (e.g. /how-we-work lists its programs) — the admin editor filters the
+// "+ Add section" list by page_type, though nothing at the schema/DB level
+// actually forbids them elsewhere.
 export const HOME_ONLY_SECTION_TYPES: readonly SectionType[] = [
   "services_grid",
   "programs_highlight",
@@ -252,6 +255,15 @@ export const featuresSectionContentSchema = z.object({
   items: z.array(featureItemSchema).default([]),
 });
 export type FeaturesSectionContent = z.infer<typeof featuresSectionContentSchema>;
+
+/** A numbered process, e.g. "Getting started" on How We Work. Numbers are automatic. */
+export const stepsSectionContentSchema = z.object({
+  eyebrow: z.string().default(""),
+  heading: z.string().default(""),
+  intro: z.string().default(""),
+  items: z.array(featureItemSchema).default([]),
+});
+export type StepsSectionContent = z.infer<typeof stepsSectionContentSchema>;
  
 export const pageSectionSchema = z.discriminatedUnion("section_type", [
   z.object({
@@ -268,6 +280,11 @@ export const pageSectionSchema = z.discriminatedUnion("section_type", [
     section_type: z.literal("features"),
     background: z.enum(SECTION_BACKGROUNDS),
     content: featuresSectionContentSchema,
+  }),
+  z.object({
+    section_type: z.literal("steps"),
+    background: z.enum(SECTION_BACKGROUNDS),
+    content: stepsSectionContentSchema,
   }),
   z.object({
     section_type: z.literal("text"),
@@ -428,6 +445,12 @@ export function createBlankSection(type: SectionType): PageSection {
         section_type: "features",
         background: "none",
         content: { eyebrow: "", heading: "", intro: "", style: "dark", items: [] },
+      };
+    case "steps":
+      return {
+        section_type: "steps",
+        background: "tint",
+        content: { eyebrow: "", heading: "", intro: "", items: [] },
       };
   }
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { Page } from "@/lib/content/pages";
+import { getPagePublicPath, isSingletonPage, type Page } from "@/lib/content/pages";
 import { publishPage, unpublishPage, createBlankPage } from "./actions";
  
 const TYPE_LABEL: Record<Page["page_type"], string> = {
@@ -8,13 +8,8 @@ const TYPE_LABEL: Record<Page["page_type"], string> = {
   program: "Program",
   custom: "Custom page",
   home: "Homepage",
+  overview: "Section overview",
 };
- 
-function pagePublicPath(page: Page): string {
-  if (page.page_type === "custom") return `/${page.slug}`;
-  if (page.page_type === "home") return "/";
-  return `/${page.parent_section}/${page.slug}`;
-}
  
 export default async function AdminPagesPage() {
   const supabase = await createClient();
@@ -33,7 +28,7 @@ export default async function AdminPagesPage() {
         <div>
           <h1 className="text-2xl font-semibold text-neutral-900">Pages</h1>
           <p className="mt-1 text-sm text-neutral-500">
-            Services, How We Work programs, and free-standing custom pages.
+            The homepage, section overview pages, services, How We Work programs, and free-standing custom pages.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -73,7 +68,7 @@ export default async function AdminPagesPage() {
                 <span className="text-xs text-neutral-400">{TYPE_LABEL[page.page_type]}</span>
               </div>
               <h2 className="mt-1 truncate font-medium text-neutral-900">{page.title}</h2>
-              <p className="text-xs text-neutral-400">{pagePublicPath(page)}</p>
+              <p className="text-xs text-neutral-400">{getPagePublicPath(page)}</p>
             </div>
  
             <div className="flex flex-shrink-0 gap-2 text-sm">
@@ -83,7 +78,7 @@ export default async function AdminPagesPage() {
               >
                 Edit
               </Link>
-              {page.page_type === "home" ? null : page.status === "published" ? (
+              {isSingletonPage(page.page_type) ? null : page.status === "published" ? (
                 <form action={unpublishPage.bind(null, page.id)}>
                   <button className="rounded-lg border border-neutral-300 px-3 py-1.5 font-medium text-neutral-700 hover:bg-neutral-50">
                     Unpublish

@@ -10,14 +10,15 @@ export function PageHero({
   intro?: string;
 }) {
   return (
-    <div className="border-b border-black/5 bg-brand-cream py-16 md:py-20">
+    // Inset rounded band, per the approved inner-page mockups (Oct 2026).
+    <div className="mx-2 mt-2 rounded-3xl bg-brand-cream py-14 sm:mx-4 sm:mt-4 md:py-16">
       <Container>
         {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-        <h1 className="max-w-2xl text-h1 font-semibold text-brand-dark">
+        <h1 className="max-w-3xl text-balance text-h1 font-semibold tracking-tight text-brand-dark">
           {title}
         </h1>
         {intro && (
-          <p className="mt-4 max-w-xl text-lead text-brand-dark/75">
+          <p className="mt-4 max-w-2xl text-body text-brand-dark/75">
             {intro}
           </p>
         )}

@@ -1,30 +1,48 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHero } from "@/components/page-hero";
+import { PageSectionsRenderer } from "@/components/page-sections-renderer";
 import { Container, Section } from "@/components/ui";
+import { getOverviewPage } from "@/lib/content/overview-pages";
+import { getPageSections } from "@/lib/content/get-page-sections";
 import { createClient } from "@/lib/supabase/server";
 import type { Page } from "@/lib/content/pages";
- 
-export const metadata: Metadata = {
+
+const FALLBACK_META = {
   title: "How We Work | Iconos Group",
   description:
     "Managed Legal Services, a tiered Virtual Data Protection Officer service, and ad hoc work — one fixed monthly cost, no surprise invoices.",
 };
- 
-async function getPrograms(): Promise<Page[]> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("pages")
-    .select("*")
-    .eq("parent_section", "how-we-work")
-    .eq("status", "published")
-    .order("sort_order", { ascending: true });
-  return (data as Page[] | null) ?? [];
+
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await getOverviewPage("how-we-work");
+  if (!page) return FALLBACK_META;
+  return {
+    title: FALLBACK_META.title,
+    description: page.meta_description || page.summary || FALLBACK_META.description,
+  };
 }
- 
+
 export default async function HowWeWorkPage() {
+  const page = await getOverviewPage("how-we-work");
+
+  // Editable overview (admin → Pages → How We Work). Header comes from the
+  // page's own eyebrow/heading/intro fields; everything below is sections.
+  if (page) {
+    const sections = await getPageSections(page.id);
+    return (
+      <>
+        <PageHero eyebrow={page.tag ?? undefined} title={page.title} intro={page.summary} />
+        <Container className="pb-8 pt-12 sm:pt-16">
+          <PageSectionsRenderer sections={sections} />
+        </Container>
+      </>
+    );
+  }
+
+  // Fallback until the overview page row exists (migration 0022): the
+  // previous static layout, so the route never renders empty.
   const programs = await getPrograms();
- 
   return (
     <>
       <PageHero
@@ -40,15 +58,25 @@ export default async function HowWeWorkPage() {
               href={`/how-we-work/${program.slug}`}
               className="rounded-2xl border border-black/10 p-8 transition-colors hover:bg-brand-cream"
             >
-              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-brand-accent">
-                {program.tag}
-              </p>
+              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-brand-accent">{program.tag}</p>
               <h2 className="mb-3 text-h3 font-semibold text-brand-dark">{program.title}</h2>
-              <p className="text-sm leading-relaxed text-neutral-600">{program.summary}</p>
+              <p className="text-small text-brand-dark/75">{program.summary}</p>
             </Link>
           ))}
         </Container>
       </Section>
     </>
   );
+}
+
+async function getPrograms(): Promise<Page[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("pages")
+    .select("*")
+    .eq("page_type", "program")
+    .eq("parent_section", "how-we-work")
+    .eq("status", "published")
+    .order("sort_order", { ascending: true });
+  return (data as Page[] | null) ?? [];
 }
