@@ -65,13 +65,17 @@ export function SiteHeader({ nav }: { nav: Array<NavLink | NavGroup> }) {
           {nav.map((item) =>
             isNavGroup(item) ? (
               <div key={item.label} className="py-2">
-                <Link
-                  href={item.href}
-                  className="block py-1.5 text-sm font-semibold text-brand-dark"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {item.label}
-                </Link>
+                {item.showOverview === false ? (
+                  <span className="block py-1.5 text-sm font-semibold text-brand-dark">{item.label}</span>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className="block py-1.5 text-sm font-semibold text-brand-dark"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                )}
                 {item.children.map((child) => (
                   <Link
                     key={child.href}

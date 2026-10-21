@@ -7,6 +7,12 @@ export interface NavGroup {
   label: string;
   href: string; // overview page
   children: NavLink[];
+  /**
+   * Whether the dropdown links to the overview page (as "Overview" on
+   * desktop, and the group label itself on mobile). False keeps the
+   * overview page live but out of the nav.
+   */
+  showOverview?: boolean;
 }
  
 /**
@@ -24,7 +30,10 @@ export function buildPrimaryNav(
   return [
     // Order follows the approved homepage mockup (Oct 2026).
     { label: "How We Work", href: "/how-we-work", children: howWeWorkChildren },
-    { label: "What We Do", href: "/what-we-do", children: whatWeDoChildren },
+    // The What We Do overview page still exists but isn't in the current
+    // wireframes, so it's left out of the nav (Oct 2026). Set to true to
+    // bring it back.
+    { label: "What We Do", href: "/what-we-do", children: whatWeDoChildren, showOverview: false },
     { label: "Who We Are", href: "/who-we-are" },
     { label: "Clients", href: "/clients" },
     { label: "Work With Us", href: "/work-with-us" },

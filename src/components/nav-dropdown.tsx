@@ -93,13 +93,15 @@ export function NavDropdown({ item }: { item: NavGroup }) {
         <ChevronDown className="h-3.5 w-3.5" aria-hidden />
       </summary>
       <div className="absolute left-0 top-full z-50 mt-1 w-64 rounded-xl border border-black/5 bg-white p-2 shadow-lg">
-        <Link
-          href={item.href}
-          className="block rounded-lg px-3 py-2 text-sm font-semibold text-brand-dark hover:bg-brand-cream"
-          onClick={() => setIsOpen(false)}
-        >
-          Overview
-        </Link>
+        {item.showOverview !== false && (
+          <Link
+            href={item.href}
+            className="block rounded-lg px-3 py-2 text-sm font-semibold text-brand-dark hover:bg-brand-cream"
+            onClick={() => setIsOpen(false)}
+          >
+            Overview
+          </Link>
+        )}
         {item.children.map((child) => (
           <Link
             key={child.href}
