@@ -46,7 +46,7 @@ export const INTERESTS: readonly InterestOption[] = [
         label: "Years qualified",
         type: "select",
         width: "half",
-        options: ["Up to 5 years", "5 to 10 years", "More than 10 years"],
+        options: ["Less than 5 years", "5 to 10 years", "More than 10 years"],
       },
       {
         id: "availability",
