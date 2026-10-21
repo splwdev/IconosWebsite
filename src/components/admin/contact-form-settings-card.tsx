@@ -69,8 +69,8 @@ export function ContactFormSettingsCard({
         <div>
           <h2 className="text-lg font-semibold text-brand-dark">Contact form</h2>
           <p className="mt-1 text-sm text-neutral-500">
-            Where public enquiries are delivered, and the automatic confirmation reply sent
-            to the enquirer.
+            Where public enquiries are delivered, the automatic confirmation reply sent to the
+            enquirer, and the text around the form on the Contact page.
           </p>
         </div>
         {savedAt && (
@@ -189,6 +189,66 @@ export function ContactFormSettingsCard({
           </div>
         )}
  
+        <div className="space-y-4 border-t border-black/5 pt-5">
+          <div>
+            <h3 className="text-sm font-semibold text-brand-dark">Contact page</h3>
+            <p className="mt-0.5 text-xs text-neutral-400">The text around the form on /contact.</p>
+          </div>
+          <div>
+            <label htmlFor="page_intro" className="mb-1 block text-sm font-medium text-brand-dark">
+              Intro under the heading
+            </label>
+            <textarea id="page_intro" rows={2} className={inputClass} {...register("page_intro")} />
+            {errors.page_intro && <p className="mt-1 text-xs text-red-600">{errors.page_intro.message}</p>}
+          </div>
+          <fieldset className="space-y-3">
+            <legend className="mb-1 text-sm font-medium text-brand-dark">&ldquo;What happens next&rdquo; steps</legend>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="grid grid-cols-1 gap-2 sm:grid-cols-[2rem_1fr_2fr] sm:items-start">
+                <span className="pt-2.5 text-sm font-semibold text-neutral-400">{i + 1}.</span>
+                <div>
+                  <input
+                    aria-label={`Step ${i + 1} title`}
+                    placeholder="Title"
+                    className={inputClass}
+                    {...register(`next_steps.${i}.title` as const)}
+                  />
+                  {errors.next_steps?.[i]?.title && (
+                    <p className="mt-1 text-xs text-red-600">{errors.next_steps[i]?.title?.message}</p>
+                  )}
+                </div>
+                <div>
+                  <input
+                    aria-label={`Step ${i + 1} text`}
+                    placeholder="Text"
+                    className={inputClass}
+                    {...register(`next_steps.${i}.body` as const)}
+                  />
+                  {errors.next_steps?.[i]?.body && (
+                    <p className="mt-1 text-xs text-red-600">{errors.next_steps[i]?.body?.message}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </fieldset>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="direct_email" className="mb-1 block text-sm font-medium text-brand-dark">
+                Direct email
+              </label>
+              <input id="direct_email" type="email" className={inputClass} {...register("direct_email")} />
+              {errors.direct_email && <p className="mt-1 text-xs text-red-600">{errors.direct_email.message}</p>}
+            </div>
+            <div>
+              <label htmlFor="direct_phone" className="mb-1 block text-sm font-medium text-brand-dark">
+                Direct phone <span className="font-normal text-neutral-400">(blank to hide)</span>
+              </label>
+              <input id="direct_phone" type="tel" className={inputClass} {...register("direct_phone")} />
+              {errors.direct_phone && <p className="mt-1 text-xs text-red-600">{errors.direct_phone.message}</p>}
+            </div>
+          </div>
+        </div>
+
         {status === "error" && serverErrors.length > 0 && (
           <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
             {serverErrors.map((e) => (

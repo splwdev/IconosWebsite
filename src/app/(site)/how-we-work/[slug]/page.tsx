@@ -1,3 +1,4 @@
+import { contactHrefForProgram } from "@/lib/contact/enquiry";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
@@ -69,7 +70,7 @@ export default async function WorkProgramPage({
           <PageSectionsRenderer sections={sections} />
           {!hasOwnCallToAction(sections) && (
             <div className="mt-10">
-              <PrimaryButton href="/contact">Ask about {program.title.toLowerCase()}</PrimaryButton>
+              <PrimaryButton href={contactHrefForProgram(program.slug)}>Ask about {program.title.toLowerCase()}</PrimaryButton>
             </div>
           )}
         </Container>
