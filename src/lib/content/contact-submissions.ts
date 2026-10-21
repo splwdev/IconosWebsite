@@ -29,6 +29,8 @@ export interface ContactSubmission {
   heard_about: string;
   privacy_agreed: boolean;
   marketing_opt_in: boolean;
+  marketing_opt_in_at: string | null;
+  marketing_opt_in_wording: string;
   turnstile_verified: boolean;
   email_sent: boolean;
   read_at: string | null;

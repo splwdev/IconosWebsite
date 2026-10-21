@@ -55,6 +55,13 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  async redirects() {
+    return [
+      // The Work With Us form briefly lived here (Oct 2026); query strings
+      // such as ?interest=referral are carried across automatically.
+      { source: "/work-with-us/get-in-touch", destination: "/work-with-us/enquiry", permanent: true },
+    ];
+  },
 };
  
 export default nextConfig;

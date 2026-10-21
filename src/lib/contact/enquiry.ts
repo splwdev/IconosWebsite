@@ -11,10 +11,21 @@ import { z } from "zod";
 export const SERVICE_KEYS = ["mls", "vdpo", "training", "adhoc", "not-sure"] as const;
 export type ServiceKey = (typeof SERVICE_KEYS)[number];
 
+/** The six practice areas, used wherever someone ticks areas of law. */
+export const PRACTICE_AREAS = [
+  "Commercial contracts",
+  "Corporate",
+  "Employment",
+  "Intellectual Property",
+  "Mergers and Acquisitions",
+  "Data Protection and GDPR",
+] as const;
+
 export interface FollowUpQuestion {
   id: string;
   label: string;
-  type: "select" | "checkboxes";
+  /** text: a short free-text answer (options unused). */
+  type: "select" | "checkboxes" | "text";
   options: readonly string[];
   /** Grid width on desktop: "half" sits beside the next half-width question. */
   width?: "half" | "full";
@@ -46,27 +57,20 @@ export const SERVICES: readonly ServiceOption[] = [
         label: "Do you have an in-house legal team?",
         type: "select",
         width: "half",
-        options: ["No", "Yes, one person", "Yes, a small team"],
+        options: ["No", "Yes, we'd like extra support for them", "Not sure"],
       },
       {
         id: "support_level",
         label: "How much support do you think you need?",
         type: "select",
         width: "half",
-        options: ["A few hours a month", "Around a day a week", "More than a day a week", "Not sure yet"],
+        options: ["A few hours a month", "Regular, ongoing support", "Not sure yet"],
       },
       {
         id: "areas",
         label: "Which areas do you need help with most?",
         type: "checkboxes",
-        options: [
-          "Commercial contracts",
-          "Corporate",
-          "Employment",
-          "Intellectual Property",
-          "Mergers and Acquisitions",
-          "Data Protection and GDPR",
-        ],
+        options: PRACTICE_AREAS,
       },
     ],
   },
@@ -83,30 +87,24 @@ export const SERVICES: readonly ServiceOption[] = [
         label: "Which tier interests you?",
         type: "select",
         width: "half",
-        options: ["Essential", "Growth", "Managed", "Not sure yet"],
+        options: ["Essential", "Growth", "Managed", "Not sure, please advise"],
       },
       {
         id: "current_owner",
         label: "Who looks after data protection today?",
         type: "select",
         width: "half",
-        options: [
-          "Nobody in particular",
-          "Someone internally, alongside their main role",
-          "A dedicated person or team",
-          "An external provider",
-        ],
+        options: ["Nobody specifically", "Someone internally, alongside their main role", "An external provider", "Not sure"],
       },
       {
         id: "urgent",
         label: "Is there anything urgent?",
         type: "select",
         options: [
-          "No, nothing urgent",
-          "A data breach or incident",
-          "A subject access request",
-          "A query from the ICO or a regulator",
-          "A customer or contract deadline",
+          "No, we want to get things in order",
+          "A customer or investor is asking for evidence of compliance",
+          "We've had a data breach or complaint",
+          "We've received a subject access request",
         ],
       },
     ],
@@ -124,25 +122,20 @@ export const SERVICES: readonly ServiceOption[] = [
         label: "Roughly how many people need training?",
         type: "select",
         width: "half",
-        options: ["1–10", "11–50", "51–150", "More than 150"],
+        options: ["1 to 10", "11 to 25", "26 to 50", "More than 50"],
       },
       {
         id: "delivery",
         label: "How would you like it delivered?",
         type: "select",
         width: "half",
-        options: ["Virtually", "In person", "Either / not sure"],
+        options: ["Virtually", "In person at our offices", "Not sure yet"],
       },
       {
         id: "looking_for",
         label: "What are you looking for?",
         type: "select",
-        options: [
-          "General data protection awareness",
-          "Training for specific teams (e.g. HR, sales, marketing)",
-          "A board or leadership briefing",
-          "Not sure yet",
-        ],
+        options: ["A one-off session", "An annual programme", "Training as part of a vDPO subscription", "Not sure yet"],
       },
     ],
   },
@@ -160,14 +153,13 @@ export const SERVICES: readonly ServiceOption[] = [
         type: "select",
         width: "half",
         options: [
-          "Contract or terms and conditions",
-          "Corporate or shareholder matter",
           "Commercial lease",
+          "Shareholders' agreement",
           "Buying, selling or investing",
-          "Employment",
-          "Intellectual Property",
-          "Data protection",
+          "Terms and contracts",
+          "Settlement agreement",
           "Dispute or debt recovery",
+          "Data breach response",
           "Something else",
         ],
       },
@@ -176,7 +168,7 @@ export const SERVICES: readonly ServiceOption[] = [
         label: "When do you need help by?",
         type: "select",
         width: "half",
-        options: ["As soon as possible", "Within two weeks", "Within a month", "No fixed deadline"],
+        options: ["As soon as possible", "Within the next month", "No fixed deadline"],
       },
     ],
   },
@@ -190,14 +182,21 @@ export const SERVICES: readonly ServiceOption[] = [
   },
 ];
 
-export const EMPLOYEE_OPTIONS = ["1–9", "10–49", "50–149", "150–249", "250 or more"] as const;
+/**
+ * The marketing tick-box wording, exactly as shown. Stored with the
+ * submission when ticked, so there's a record of what was agreed to.
+ */
+export const MARKETING_OPT_IN_WORDING =
+  "I'd like to receive occasional news and insights from Iconos by email. You can unsubscribe at any time.";
+
+export const EMPLOYEE_OPTIONS = ["1 to 10", "11 to 50", "51 to 250", "More than 250"] as const;
 
 export const HEARD_ABOUT_OPTIONS = [
-  "Search engine",
   "LinkedIn",
   "Recommendation or referral",
-  "Event or talk",
-  "Blog or article",
+  "Search engine",
+  "Event",
+  "Our newsletter",
   "Other",
 ] as const;
 
@@ -226,6 +225,58 @@ export function parseServiceParam(value: string | string[] | undefined): Service
   return getService(raw?.trim().toLowerCase())?.key ?? null;
 }
 
+export type Answers = Record<string, string | string[]>;
+
+/** Follow-up answers as accepted from the browser, keyed by question id. */
+export const answersSchema = z.record(z.string(), z.union([z.string(), z.array(z.string())])).default({});
+
+/**
+ * Hidden "website" field that people never see or fill in. Bots that fill
+ * every field do; the server then quietly drops the submission.
+ */
+export const honeypotSchema = z.string().max(500).default("");
+
+/**
+ * Checks answers against their questions: no answers to questions that
+ * weren't asked, choices only from the listed options, one choice for a
+ * single-choice question, and short free text.
+ */
+export function checkAnswers(questions: readonly FollowUpQuestion[], answers: Answers, ctx: z.RefinementCtx): void {
+  const known = new Set(questions.map((q) => q.id));
+  for (const key of Object.keys(answers)) {
+    if (!known.has(key)) ctx.addIssue({ code: "custom", path: ["answers", key], message: "Unexpected answer" });
+  }
+  for (const q of questions) {
+    const answer = answers[q.id];
+    if (answer === undefined || answer === "") continue;
+    if (q.type === "text") {
+      if (typeof answer !== "string" || answer.length > 500) {
+        ctx.addIssue({ code: "custom", path: ["answers", q.id], message: "Please keep this under 500 characters" });
+      }
+      continue;
+    }
+    if (q.type === "select" && Array.isArray(answer)) {
+      ctx.addIssue({ code: "custom", path: ["answers", q.id], message: "Please choose one option" });
+      continue;
+    }
+    const values = Array.isArray(answer) ? answer : [answer];
+    if (!values.every((v) => q.options.includes(v))) {
+      ctx.addIssue({ code: "custom", path: ["answers", q.id], message: "Please choose from the options" });
+    }
+  }
+}
+
+/** Answered questions as readable pairs, in question order, skipping blanks. */
+export function describeQuestionAnswers(questions: readonly FollowUpQuestion[], answers: Answers): EnquiryDetail[] {
+  const details: EnquiryDetail[] = [];
+  for (const q of questions) {
+    const answer = answers[q.id];
+    const text = (Array.isArray(answer) ? answer.join(", ") : (answer ?? "")).trim();
+    if (text) details.push({ question: q.label, answer: text });
+  }
+  return details;
+}
+
 const optionalChoice = (options: readonly string[]) =>
   z
     .string()
@@ -244,32 +295,17 @@ export const enquiryFormSchema = z
     sector: z.string().trim().max(120).default(""),
     service: z.enum(SERVICE_KEYS, { message: "Please choose how we can help" }),
     /** Follow-up answers keyed by question id; only the chosen service's are kept. */
-    answers: z.record(z.string(), z.union([z.string(), z.array(z.string())])).default({}),
+    answers: answersSchema,
     message: z.string().trim().min(1, "Please tell us a little about what you need").max(5000),
     heardAbout: optionalChoice(HEARD_ABOUT_OPTIONS),
     privacyAgreed: z.literal(true, { message: "Please confirm you agree, so we can respond" }),
     marketingOptIn: z.boolean().default(false),
     turnstileToken: z.string().min(1, "Please complete the verification challenge"),
+    website: honeypotSchema,
   })
   .superRefine((data, ctx) => {
     const service = getService(data.service);
-    if (!service) return;
-    const known = new Set(service.questions.map((q) => q.id));
-    for (const key of Object.keys(data.answers)) {
-      if (!known.has(key)) {
-        ctx.addIssue({ code: "custom", path: ["answers", key], message: "Unexpected answer" });
-      }
-    }
-    for (const q of service.questions) {
-      const answer = data.answers[q.id];
-      if (answer === undefined || answer === "") continue;
-      const values = Array.isArray(answer) ? answer : [answer];
-      if (q.type === "select" && Array.isArray(answer)) {
-        ctx.addIssue({ code: "custom", path: ["answers", q.id], message: "Please choose one option" });
-      } else if (!values.every((v) => q.options.includes(v))) {
-        ctx.addIssue({ code: "custom", path: ["answers", q.id], message: "Please choose from the options" });
-      }
-    }
+    if (service) checkAnswers(service.questions, data.answers, ctx);
   });
 
 export type EnquiryFormInput = z.input<typeof enquiryFormSchema>;
@@ -287,12 +323,5 @@ export interface EnquiryDetail {
  */
 export function describeAnswers(values: Pick<EnquiryFormValues, "service" | "answers">): EnquiryDetail[] {
   const service = getService(values.service);
-  if (!service) return [];
-  const details: EnquiryDetail[] = [];
-  for (const q of service.questions) {
-    const answer = values.answers[q.id];
-    const text = Array.isArray(answer) ? answer.join(", ") : (answer ?? "");
-    if (text) details.push({ question: q.label, answer: text });
-  }
-  return details;
+  return service ? describeQuestionAnswers(service.questions, values.answers) : [];
 }

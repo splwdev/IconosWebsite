@@ -174,7 +174,8 @@ export function ContactFormSettingsCard({
                 htmlFor="autoreply_message"
                 className="mb-1 block text-sm font-medium text-brand-dark"
               >
-                Auto-reply message
+                Auto-reply message{" "}
+                <span className="font-normal text-neutral-400">(a copy of their answers is added underneath)</span>
               </label>
               <textarea
                 id="autoreply_message"
@@ -253,7 +254,7 @@ export function ContactFormSettingsCard({
           <div>
             <h3 className="text-sm font-semibold text-brand-dark">Work With Us form</h3>
             <p className="mt-0.5 text-xs text-neutral-400">
-              The text around the form on /work-with-us/get-in-touch. Enquiries go to the same recipients.
+              Where Work With Us enquiries go, their confirmation reply, and the text around the form on /work-with-us/enquiry.
             </p>
           </div>
           <div>
@@ -300,6 +301,38 @@ export function ContactFormSettingsCard({
             </label>
             <textarea id="wwu_help_text" rows={2} className={inputClass} {...register("wwu_help_text")} />
           </div>
+          <div>
+            <label htmlFor="wwu_recipient_email" className="mb-1 block text-sm font-medium text-brand-dark">
+              Recipient email <span className="font-normal text-neutral-400">(blank to use the main recipient and CCs)</span>
+            </label>
+            <input id="wwu_recipient_email" type="email" className={inputClass} {...register("wwu_recipient_email")} />
+            {errors.wwu_recipient_email && (
+              <p className="mt-1 text-xs text-red-600">{errors.wwu_recipient_email.message}</p>
+            )}
+          </div>
+          {sendAutoreply && (
+            <div className="space-y-4 rounded-xl bg-brand-cream/40 p-4">
+              <div>
+                <label htmlFor="wwu_autoreply_subject" className="mb-1 block text-sm font-medium text-brand-dark">
+                  Auto-reply subject
+                </label>
+                <input id="wwu_autoreply_subject" className={inputClass} {...register("wwu_autoreply_subject")} />
+                {errors.wwu_autoreply_subject && (
+                  <p className="mt-1 text-xs text-red-600">{errors.wwu_autoreply_subject.message}</p>
+                )}
+              </div>
+              <div>
+                <label htmlFor="wwu_autoreply_message" className="mb-1 block text-sm font-medium text-brand-dark">
+                  Auto-reply message{" "}
+                  <span className="font-normal text-neutral-400">(a copy of their answers is added underneath)</span>
+                </label>
+                <textarea id="wwu_autoreply_message" rows={3} className={inputClass} {...register("wwu_autoreply_message")} />
+                {errors.wwu_autoreply_message && (
+                  <p className="mt-1 text-xs text-red-600">{errors.wwu_autoreply_message.message}</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {status === "error" && serverErrors.length > 0 && (

@@ -86,3 +86,18 @@ export function ChoiceCard({
     </label>
   );
 }
+
+/**
+ * Spam trap: a field people never see (off-screen, skipped by keyboard and
+ * screen readers). Bots that fill every field fill this one too.
+ */
+export function HoneypotField({ register }: { register: () => object }) {
+  return (
+    <div aria-hidden="true" className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden">
+      <label>
+        Website
+        <input type="text" tabIndex={-1} autoComplete="off" {...register()} />
+      </label>
+    </div>
+  );
+}

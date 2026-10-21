@@ -4,17 +4,21 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { submitWorkWithUsForm } from "@/app/(site)/work-with-us/get-in-touch/actions";
+import { submitWorkWithUsForm } from "@/app/(site)/work-with-us/enquiry/actions";
+import type { Answers } from "@/lib/contact/enquiry";
 import {
   INTERESTS,
+  getInterest,
   workWithUsFormSchema,
   type InterestKey,
   type WorkWithUsFormInput,
 } from "@/lib/contact/work-with-us";
 import { TurnstileWidget } from "./turnstile-widget";
+import { FollowUp } from "./follow-up-question";
 import {
   ChoiceCard,
   FieldError,
+  HoneypotField,
   Required,
   fieldClass,
   invalidProps as invalid,
@@ -37,6 +41,7 @@ export function WorkWithUsForm({
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [serverErrors, setServerErrors] = useState<string[]>([]);
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [answers, setAnswers] = useState<Answers>({});
   const successRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -49,12 +54,29 @@ export function WorkWithUsForm({
     resolver: zodResolver(workWithUsFormSchema),
     defaultValues: {
       interest: initialInterest ?? undefined,
+      answers: {},
       privacyAgreed: false as unknown as true,
       turnstileToken: "",
+      website: "",
     },
   });
 
   const interest = watch("interest") as InterestKey | undefined;
+  const selected = getInterest(interest);
+
+  function chooseInterest(key: InterestKey) {
+    if (key === interest) return;
+    // Answers belong to one choice; the server rejects any others.
+    setAnswers({});
+    setValue("answers", {});
+    setValue("interest", key, { shouldValidate: Boolean(errors.interest) });
+  }
+
+  function setAnswer(questionId: string, value: string | string[]) {
+    const next = { ...answers, [questionId]: value };
+    setAnswers(next);
+    setValue("answers", next);
+  }
 
   useEffect(() => {
     if (!interest) return;
@@ -99,6 +121,7 @@ export function WorkWithUsForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-12">
+      <HoneypotField register={() => register("website")} />
       {/* 1. About you */}
       <fieldset className="space-y-5">
         <legend className={`${stepHeadingClass} mb-5`}>1. About you</legend>
@@ -193,7 +216,7 @@ export function WorkWithUsForm({
               name="interest"
               value={option.key}
               checked={interest === option.key}
-              onSelect={() => setValue("interest", option.key, { shouldValidate: Boolean(errors.interest) })}
+              onSelect={() => chooseInterest(option.key)}
               title={option.title}
               description={option.description}
               wide={i === INTERESTS.length - 1}
@@ -201,6 +224,17 @@ export function WorkWithUsForm({
           ))}
         </div>
         <FieldError id="interest-error" message={errors.interest?.message} />
+
+        {selected && selected.questions.length > 0 && (
+          <div className="mt-6 rounded-2xl bg-brand-cream p-5 sm:p-7">
+            <p className="text-base font-semibold text-brand-dark">{selected.questionsHeading}</p>
+            <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
+              {selected.questions.map((q) => (
+                <FollowUp key={`${selected.key}-${q.id}`} question={q} value={answers[q.id]} onChange={setAnswer} />
+              ))}
+            </div>
+          </div>
+        )}
       </fieldset>
 
       {/* 3. Tell us a little more */}

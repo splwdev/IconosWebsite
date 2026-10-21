@@ -76,7 +76,7 @@ describe("0031_work_with_us.sql", () => {
   });
 
   it("links the referral panel to the form with referral pre-selected", () => {
-    expect(rows[2]?.content).toMatchObject({ layout: "side", button_href: "/work-with-us/get-in-touch?interest=referral" });
+    expect(rows[2]?.content).toMatchObject({ layout: "side", button_href: "/work-with-us/enquiry?interest=referral" });
   });
 
   it("allows every enquiry type either form can store", () => {
@@ -114,5 +114,63 @@ describe("work with us settings", () => {
     });
     expect(parsed.wwu_next_steps).toHaveLength(2);
     expect(parsed.wwu_page_title).toBe("Let's work together.");
+  });
+});
+
+describe("work with us follow-up questions", () => {
+  it("accepts consultant lawyer answers from the lists", () => {
+    const result = workWithUsFormSchema.safeParse({
+      ...valid,
+      interest: "consultant",
+      answers: { years_qualified: "5 to 10 years", availability: "A few days a week", expertise: ["Corporate", "Employment"] },
+    });
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+  });
+
+  it("rejects consultant answers outside the lists", () => {
+    expect(
+      workWithUsFormSchema.safeParse({ ...valid, interest: "consultant", answers: { years_qualified: "20 years" } }).success
+    ).toBe(false);
+  });
+
+  it("accepts a short free-text answer for referral partners, and rejects a long one", () => {
+    expect(
+      workWithUsFormSchema.safeParse({ ...valid, answers: { usual_clients: "Owner-managed businesses" } }).success
+    ).toBe(true);
+    expect(workWithUsFormSchema.safeParse({ ...valid, answers: { usual_clients: "x".repeat(501) } }).success).toBe(false);
+  });
+
+  it("rejects answers belonging to a different choice", () => {
+    expect(workWithUsFormSchema.safeParse({ ...valid, answers: { years_qualified: "Up to 5 years" } }).success).toBe(false);
+  });
+
+  it("describes answers for emails", async () => {
+    const { describeInterestAnswers } = await import("./work-with-us");
+    expect(
+      describeInterestAnswers({ interest: "consultant", answers: { expertise: ["Corporate", "Employment"], availability: "" } })
+    ).toEqual([{ question: "Areas of expertise", answer: "Corporate, Employment" }]);
+  });
+
+  it("accepts the honeypot field (the server drops filled ones)", () => {
+    expect(workWithUsFormSchema.parse({ ...valid, website: "spam" }).website).toBe("spam");
+    expect(workWithUsFormSchema.parse(valid).website).toBe("");
+  });
+});
+
+describe("0032_enquiry_form_spec.sql", () => {
+  const sql2 = readFileSync(resolve(__dirname, "../../../supabase/migrations/0032_enquiry_form_spec.sql"), "utf8");
+
+  it("only replaces the auto-reply if it's still the original default", () => {
+    expect(sql2).toMatch(
+      /value->>'autoreply_message' = 'Thanks for getting in touch with Iconos Group\. A member of our team will be in touch shortly\.'/
+    );
+  });
+
+  it("points Data Protection and GDPR buttons at Virtual DPO, exact /contact links only", () => {
+    expect(sql2).toMatch(/replace\(s\.content::text, '"\/contact"', '"\/contact\?service=vdpo"'\)[\s\S]*?slug = 'data-protection-gdpr'/);
+  });
+
+  it("moves Work With Us links to the new form address", () => {
+    expect(sql2).toMatch(/replace\(s\.content::text, '\/work-with-us\/get-in-touch', '\/work-with-us\/enquiry'\)/);
   });
 });
