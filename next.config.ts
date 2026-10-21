@@ -1,28 +1,18 @@
 import type { NextConfig } from "next";
  
-// This static CSP is the one that actually applies on the deployed
-// Cloudflare Worker — middleware.ts's nonce-based CSP never runs there
-// (confirmed directly: Next.js middleware does not execute at all under
-// the current @opennextjs/cloudflare + Next.js 15.5.21 combination, a
-// real gap in that adapter, not something fixable in our own code). This
-// header mechanism, by contrast, is proven to work in production — the
-// other five headers below were already confirmed present in live
-// response headers.
+// Two CSPs are sent, and browsers enforce both (the intersection):
 //
-// The trade-off: a static header can't carry a fresh nonce per request,
-// so unlike middleware's version, script-src here allows 'unsafe-inline'
-// to let Next.js's own inline RSC-hydration <script> tags run. That does
-// lose CSP's protection against inline-script injection specifically —
-// but every other restriction (no scripts from arbitrary remote domains,
-// no framing, no unexpected image/connect sources) still applies exactly
-// as strictly as before. Going from "no CSP at all" (the actual live
-// state until this change) to this is a clear net improvement.
+// 1. middleware.ts — a strict, nonce-based policy ('strict-dynamic', no
+//    'unsafe-inline'). Under Next.js 15 + the older @opennextjs/cloudflare,
+//    middleware never ran on Cloudflare, so this only applied in local dev.
+//    Since the Next.js 16 upgrade (Oct 2026) it does run on Cloudflare —
+//    verified in workerd: every script tag carries the per-request nonce.
 //
-// middleware.ts's own CSP logic is left untouched — it still applies
-// correctly in local `next dev`, and browsers enforce the intersection
-// when multiple Content-Security-Policy headers are present, so having
-// both is safe rather than conflicting: local dev effectively gets the
-// stronger nonce-based policy, Cloudflare gets this one.
+// 2. This static header — a looser fallback ('unsafe-inline' for scripts)
+//    kept as a safety net in case middleware is ever bypassed (e.g. a
+//    static asset route or an adapter regression). Because both apply, the
+//    effective policy is the stricter nonce-based one wherever middleware
+//    runs. Keep the two in sync when adding domains (e.g. frame-src).
 const contentSecurityPolicy = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",

@@ -90,6 +90,21 @@ page-sections system (still fully editable in /admin/pages → Homepage).
 - `/how-we-work` falls back to the old static layout if the overview row
   is missing. Migration 0022 seeds it — apply after deploying the code.
 
+## Next.js 16 upgrade (21 Oct 2026)
+- Next.js 15 reached end of support on 21 Oct 2026 (2 years after
+  release) and @opennextjs/cloudflare refuses to build unsupported
+  versions, so Cloudflare builds started failing that day.
+- Upgraded: next 16.4.2, eslint-config-next 16.4.2,
+  @opennextjs/cloudflare 1.20.12, wrangler 4.151. No code changes were
+  needed (async request APIs were already in use). Builds use Turbopack.
+- middleware.ts kept as-is (the `proxy` rename is optional; middleware is
+  deprecated but supported). It now runs on Cloudflare, so the strict
+  nonce-based CSP and the /admin auth redirect apply in production too.
+- Verified locally: OpenNext build, worker in workerd, main routes, a
+  browser check for hydration and CSP violations.
+- Next major (Next 16) support runs to Oct 2027 — plan the 17 upgrade
+  before then.
+
 ## Outstanding / backlog, roughly in priority order
 1. **Header nav**: dropdowns should reveal on hover, not require a click —
    keep keyboard/touch accessibility (currently uses `<details>/<summary>`
