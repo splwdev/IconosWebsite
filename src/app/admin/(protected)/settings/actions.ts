@@ -166,3 +166,34 @@ export async function sendTestEmail(): Promise<TestEmailResult> {
           "Microsoft 365 refused the email. The sending mailbox, app registration or its access policy may need checking. Details are in the Cloudflare logs.",
       };
 }
+
+export interface BlogSwitchResult {
+  ok: boolean;
+  message: string;
+}
+
+/** Switches the Blog on or off on the public site. Admins only (also enforced by RLS). */
+export async function setBlogEnabled(enabled: boolean): Promise<BlogSwitchResult> {
+  const staff = await getStaffContext();
+  if (staff?.role !== "admin") return { ok: false, message: "Only admins can switch the Blog on or off." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("site_settings")
+    .upsert({ key: "blog", value: { enabled }, updated_by: staff.userId }, { onConflict: "key" })
+    .select("key");
+
+  if (error || !data || data.length === 0) {
+    if (error) console.error("[admin/settings] Failed to switch the blog:", error.message);
+    return { ok: false, message: "Couldn't save. You may not have permission to change this." };
+  }
+
+  // The menu, homepage, sitemap and blog pages all depend on this.
+  revalidatePath("/", "layout");
+  return {
+    ok: true,
+    message: enabled
+      ? "The Blog is now live: it's in the menu, on the homepage and in the sitemap."
+      : "The Blog is now hidden from the public. Signed-in staff can still preview it.",
+  };
+}

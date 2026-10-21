@@ -1,3 +1,4 @@
+import { isBlogEnabled } from "@/lib/settings/blog";
 import type { MetadataRoute } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { LEGAL_PAGES } from "@/lib/content/legal-pages";
@@ -20,7 +21,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/work-with-us",
     "/work-with-us/enquiry",
     "/contact",
-    "/blog",
   ].map((path) => ({ url: `${base}${path}`, lastModified: new Date() }));
  
   const supabase = await createClient();
@@ -44,7 +44,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(p.updated_at),
   }));
  
-  const postRoutes: MetadataRoute.Sitemap = posts.map((p) => ({
+  // The Blog (index and posts) is left out while it's switched off.
+  const blogOn = await isBlogEnabled();
+  const blogIndex: MetadataRoute.Sitemap = blogOn ? [{ url: `${base}/blog`, lastModified: new Date() }] : [];
+  const postRoutes: MetadataRoute.Sitemap = (blogOn ? posts : []).map((p) => ({
     url: `${base}/blog/${p.slug}`,
     lastModified: new Date(p.updated_at),
   }));
@@ -58,5 +61,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(),
   }));
  
-  return [...staticRoutes, ...pageRoutes, ...postRoutes, ...legalRoutes];
+  return [...staticRoutes, ...blogIndex, ...pageRoutes, ...postRoutes, ...legalRoutes];
 }

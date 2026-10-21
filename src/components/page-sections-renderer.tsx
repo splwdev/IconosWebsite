@@ -1,3 +1,4 @@
+import { isBlogEnabled } from "@/lib/settings/blog";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -328,6 +329,8 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
     }
 
     case "blog_teaser": {
+      // Hidden entirely while the Blog is switched off (admin → Settings).
+      if (!(await isBlogEnabled())) return null;
       const { eyebrow, heading } = section.content;
       const recentPosts = await getPublishedPosts(3);
       const cardBg = section.background === "tint" ? "bg-white" : "bg-brand-cream";

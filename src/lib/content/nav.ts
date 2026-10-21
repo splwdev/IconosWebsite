@@ -25,7 +25,9 @@ export interface NavGroup {
 export function buildPrimaryNav(
   whatWeDoChildren: NavLink[],
   howWeWorkChildren: NavLink[],
-  customLinks: NavLink[] = []
+  customLinks: NavLink[] = [],
+  /** The Blog link only shows while the Blog is switched on (admin → Settings). */
+  showBlog = true
 ): Array<NavLink | NavGroup> {
   return [
     // Order follows the approved homepage mockup (Oct 2026).
@@ -37,7 +39,7 @@ export function buildPrimaryNav(
     { label: "Who We Are", href: "/who-we-are" },
     { label: "Clients", href: "/clients" },
     { label: "Work With Us", href: "/work-with-us" },
-    { label: "Blog", href: "/blog" },
+    ...(showBlog ? [{ label: "Blog", href: "/blog" }] : []),
     ...customLinks,
   ];
 }
