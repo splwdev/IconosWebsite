@@ -435,3 +435,41 @@ describe("text checklist note_after", () => {
     expect(parsed.content.note_after).toBe("");
   });
 });
+
+describe("0028_who_we_are_page.sql", () => {
+  const { sql, rows } = seededSections("0028_who_we_are_page.sql");
+
+  it("seeds the plain-JSON sections in wireframe order", () => {
+    expect(rows.map((r) => r.section_type)).toEqual(["text_checklist", "steps", "cta"]);
+  });
+
+  it.each(rows.map((r) => [r.section_type, r] as const))("%s row passes the application schema", (_t, row) => {
+    const result = pageSectionSchema.safeParse(row);
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+  });
+
+  it("founder section passes the schema with or without a copied photo", () => {
+    const match = sql.match(/'media_text', 'tint',\s*jsonb_set\(\$json\$([\s\S]*?)\$json\$::jsonb/);
+    const content = JSON.parse(match?.[1] ?? "null");
+    for (const image_url of [null, "https://example.supabase.co/storage/v1/object/public/x.webp"]) {
+      const result = pageSectionSchema.safeParse({
+        section_type: "media_text",
+        background: "tint",
+        content: { ...content, image_url },
+      });
+      expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+    }
+    expect(content.body).toContain("<h2>Erika Moralez-Perez</h2>");
+  });
+
+  it("allows who-we-are as an overview page in the database too", () => {
+    expect(sql).toMatch(/slug in \('how-we-work', 'what-we-do', 'who-we-are'\)/);
+  });
+});
+
+describe("overview slugs", () => {
+  it("accept /who-we-are", async () => {
+    const { OVERVIEW_SLUGS } = await import("./pages");
+    expect(OVERVIEW_SLUGS).toContain("who-we-are");
+  });
+});

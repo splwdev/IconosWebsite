@@ -1,70 +1,78 @@
 import type { Metadata } from "next";
 import { PageHero } from "@/components/page-hero";
+import { PageSectionsRenderer } from "@/components/page-sections-renderer";
 import { Container, Section, Eyebrow, PrimaryButton } from "@/components/ui";
+import { getOverviewPage } from "@/lib/content/overview-pages";
+import { getPageSections } from "@/lib/content/get-page-sections";
 
-export const metadata: Metadata = {
+const FALLBACK_META = {
   title: "Who We Are | Iconos Group",
   description:
-    "Iconos Group was founded to be an integral part of companies' support teams — led by Erika Moralez Perez.",
+    "We combine legal expertise with real commercial experience, working alongside your business to deliver practical advice that adds value.",
 };
 
-export default function WhoWeArePage() {
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await getOverviewPage("who-we-are");
+  if (!page) return FALLBACK_META;
+  return {
+    title: FALLBACK_META.title,
+    description: page.meta_description || page.summary || FALLBACK_META.description,
+  };
+}
+
+export default async function WhoWeArePage() {
+  const page = await getOverviewPage("who-we-are");
+
+  // Editable page (admin → Pages → Who We Are). Header comes from the page's
+  // own eyebrow/heading/intro fields; everything below is sections.
+  if (page) {
+    const sections = await getPageSections(page.id);
+    return (
+      <>
+        <PageHero eyebrow={page.tag ?? undefined} title={page.title} intro={page.summary} />
+        <Container className="pb-8 pt-12 sm:pt-16">
+          <PageSectionsRenderer sections={sections} />
+        </Container>
+      </>
+    );
+  }
+
+  // Fallback until the page row exists (migration 0028), so the route never
+  // renders empty.
   return (
     <>
       <PageHero
         eyebrow="Who we are"
-        title="Founded to be part of your team, not outside it."
-        intro="Iconos Group was founded in 2021 to be an integral part of companies' support teams — combining legal practice with real commercial experience."
+        title="Part of your team, not just your legal adviser."
+        intro="We combine legal expertise with real commercial experience, working alongside your business to deliver practical advice that adds value."
       />
 
       <Section>
         <Container className="max-w-2xl space-y-5 text-body text-neutral-700">
           <p>
-            By working with sales teams, Iconos Group helps to maximise
-            profitability by treating the causes of missed opportunities
-            rather than the symptoms, and by providing commercially focused
-            legal support to all stakeholders and board executives.
-          </p>
-          <p>
-            We serve growing UK and international businesses — roughly
-            10–150 employees, especially in technology, education, health
-            and estate agency — who&apos;ve outgrown DIY legal but
-            aren&apos;t ready for a full-time hire. Legal advice should add
-            to your bottom line, not just sit there as a cost centre.
+            We work alongside sales teams, business leaders and boards to identify risks, unlock opportunities and
+            improve profitability. Our advice is practical, commercially focused and designed to add value, not just
+            cost.
           </p>
         </Container>
       </Section>
 
       <Section tint>
-        <Container className="grid grid-cols-1 items-center gap-14 md:grid-cols-[0.85fr_1.15fr]">
-          <div className="mx-auto aspect-[4/5] w-full max-w-sm rounded-3xl bg-brand-tint" />
-          <div>
-            <Eyebrow>Our founder</Eyebrow>
-            <h2 className="text-h2 font-semibold text-brand-dark">
-              Erika Moralez Perez
-            </h2>
-            <p className="mt-5 text-body text-neutral-700">
-              Iconos is led by Erika Moralez Perez, a commercial lawyer who
-              combines years of experience in legal practice with a decade
-              of business management in international IT and software
-              companies.
-            </p>
-            <p className="mt-4 text-body text-neutral-700">
-              Erika has assembled a team of experienced, fully qualified,
-              independent lawyers, as well as like-minded solicitors, to
-              deliver a flexible and value-added legal service.
-            </p>
-          </div>
+        <Container className="max-w-2xl">
+          <Eyebrow>Our founder</Eyebrow>
+          <h2 className="text-h2 font-semibold text-brand-dark">Erika Moralez-Perez</h2>
+          <p className="mt-5 text-body text-neutral-700">
+            Erika combines legal expertise with first-hand commercial experience, having spent nearly a decade in IT
+            and software businesses before qualifying as a solicitor.
+          </p>
         </Container>
       </Section>
 
       <Section>
         <Container className="text-center">
-          <h2 className="text-h2 font-semibold text-brand-dark">
-            Want to see how we work with businesses like yours?
-          </h2>
+          <h2 className="text-h2 font-semibold text-brand-dark">Want to see how we work with businesses like yours?</h2>
           <div className="mt-6">
-            <PrimaryButton href="/how-we-work">Explore how we work</PrimaryButton>
+            <PrimaryButton href="/how-we-work">See how we work</PrimaryButton>
           </div>
         </Container>
       </Section>

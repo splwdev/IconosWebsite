@@ -82,7 +82,7 @@ const TYPE_LABEL: Record<Page["page_type"], string> = {
   program: "Program",
   custom: "Custom page",
   home: "Homepage",
-  overview: "Section overview",
+  overview: "Overview page",
 };
  
 const MEDIA_SIZE_LABEL: Record<(typeof MEDIA_SIZES)[number], string> = {
@@ -1846,7 +1846,7 @@ export function PageEditorForm({
             <span className="font-medium text-neutral-700">{previewPath || "…"}</span>
           </div>
           {isOverview ? (
-            <p className="mt-1 text-xs text-neutral-400">Fixed — this is the section&apos;s overview page.</p>
+            <p className="mt-1 text-xs text-neutral-400">Fixed — this page&apos;s URL can&apos;t change.</p>
           ) : page.page_type !== "home" ? (
             <p className="mt-1 text-xs text-neutral-400">
               {isPublished
