@@ -141,7 +141,7 @@ describe("work with us follow-up questions", () => {
   });
 
   it("rejects answers belonging to a different choice", () => {
-    expect(workWithUsFormSchema.safeParse({ ...valid, answers: { years_qualified: "Up to 5 years" } }).success).toBe(false);
+    expect(workWithUsFormSchema.safeParse({ ...valid, answers: { years_qualified: "Less than 5 years" } }).success).toBe(false);
   });
 
   it("describes answers for emails", async () => {
