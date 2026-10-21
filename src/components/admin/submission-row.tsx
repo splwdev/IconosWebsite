@@ -13,6 +13,16 @@ export function SubmissionRow({ submission }: { submission: ContactSubmission })
   const [isPending, startTransition] = useTransition();
  
   const isUnread = !submission.read_at;
+
+  // Older submissions predate these fields; blanks are simply skipped.
+  const details = [
+    { label: "Job title", value: submission.job_title },
+    { label: "Employees", value: submission.company_size },
+    { label: "Sector", value: submission.sector },
+    ...(submission.service_details ?? []).map((d) => ({ label: d.question, value: d.answer })),
+    { label: "Heard about us", value: submission.heard_about },
+    { label: "Marketing emails", value: submission.marketing_opt_in ? "Opted in" : "" },
+  ].filter((d) => d.value);
  
   function toggleRead() {
     startTransition(() => {
@@ -48,13 +58,23 @@ export function SubmissionRow({ submission }: { submission: ContactSubmission })
             )}
           </div>
           <p className="mt-1 text-xs text-neutral-400">
-            {new Date(submission.created_at).toLocaleString("en-GB")} · {submission.email} ·{" "}
-            {submission.phone}
+            {new Date(submission.created_at).toLocaleString("en-GB")} · {submission.email}
+            {submission.phone ? ` · ${submission.phone}` : ""}
           </p>
           {expanded && (
-            <p className="mt-3 whitespace-pre-wrap rounded-lg bg-neutral-50 p-3 text-sm text-neutral-700">
-              {submission.message}
-            </p>
+            <div className="mt-3 space-y-3 rounded-lg bg-neutral-50 p-3 text-sm text-neutral-700">
+              {details.length > 0 && (
+                <dl className="grid grid-cols-1 gap-x-6 gap-y-1.5 sm:grid-cols-[auto_1fr]">
+                  {details.map((d) => (
+                    <div key={d.label} className="contents">
+                      <dt className="text-neutral-500">{d.label}</dt>
+                      <dd className="font-medium text-neutral-800">{d.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              <p className="whitespace-pre-wrap">{submission.message}</p>
+            </div>
           )}
         </button>
  

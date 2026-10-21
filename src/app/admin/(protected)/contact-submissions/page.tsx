@@ -6,7 +6,9 @@ import { SubmissionRow } from "../../../../components/admin/submission-row";
 const ENQUIRY_TYPES: EnquiryType[] = [
   "Managed Legal Services",
   "Virtual Data Protection Officer",
+  "Data Protection Training",
   "Ad Hoc Work",
+  "Not Sure Yet",
   "General Enquiry",
 ];
  
