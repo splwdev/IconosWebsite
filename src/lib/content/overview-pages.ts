@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { OverviewSlug, Page } from "./pages";
 
 /**
- * The published overview page (/how-we-work, /what-we-do, /who-we-are),
+ * The published overview page (/how-we-work, /what-we-do, /who-we-are, /clients),
  * or null if it hasn't been created yet. Wrapped in React cache() because
  * generateMetadata and the page component both call it in one request.
  */

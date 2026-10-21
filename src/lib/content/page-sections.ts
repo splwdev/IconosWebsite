@@ -210,9 +210,17 @@ export const programsHighlightSectionContentSchema = z.object({
 });
 export type ProgramsHighlightSectionContent = z.infer<typeof programsHighlightSectionContentSchema>;
  
+export const TESTIMONIALS_DISPLAYS = ["highlights", "all"] as const;
+
 export const testimonialsSectionContentSchema = z.object({
   eyebrow: z.string().default(""),
   heading: z.string().default(""),
+  /**
+   * highlights: testimonials ticked "Show on homepage", short quotes, three
+   * across. all: every published testimonial with headline and full quote,
+   * two across (the Clients page).
+   */
+  display: z.enum(TESTIMONIALS_DISPLAYS).default("highlights"),
   button_label: z.string().default(""),
   button_href: optionalHref,
 });
@@ -556,7 +564,7 @@ export function createBlankSection(type: SectionType): PageSection {
       return {
         section_type: "testimonials",
         background: "none",
-        content: { eyebrow: "", heading: "", button_label: "", button_href: "" },
+        content: { eyebrow: "", heading: "", display: "highlights", button_label: "", button_href: "" },
       };
     case "blog_teaser":
       return {

@@ -1489,6 +1489,22 @@ function SectionCard({
       )}
       {section.section_type === "testimonials" && (
         <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-neutral-600">Which testimonials</label>
+            <select
+              className={inputClass}
+              value={section.content.display}
+              onChange={(e) =>
+                onChange({
+                  ...section,
+                  content: { ...section.content, display: e.target.value as TestimonialsSectionContent["display"] },
+                } as PageSection)
+              }
+            >
+              <option value="highlights">Homepage highlights — short quotes, three across</option>
+              <option value="all">All published — headlines and full quotes, two across</option>
+            </select>
+          </div>
           <SmartSectionFields<TestimonialsSectionContent>
             content={section.content}
             onChange={(content) => onChange({ ...section, content } as PageSection)}

@@ -473,3 +473,66 @@ describe("overview slugs", () => {
     expect(OVERVIEW_SLUGS).toContain("who-we-are");
   });
 });
+
+describe("0029_clients_page.sql", () => {
+  const { sql, rows } = seededSections("0029_clients_page.sql");
+
+  it("seeds the testimonials wall then a dark CTA", () => {
+    expect(rows.map((r) => r.section_type)).toEqual(["testimonials", "cta"]);
+  });
+
+  it.each(rows.map((r) => [r.section_type, r] as const))("%s row passes the application schema", (_t, row) => {
+    const result = pageSectionSchema.safeParse(row);
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+  });
+
+  it("shows every published testimonial on the Clients page", () => {
+    expect(rows[0]?.content).toMatchObject({ display: "all" });
+  });
+
+  it("keeps the three new testimonials off the homepage and only adds missing ones", () => {
+    expect(sql).toMatch(/select v\.quote, v\.attribution, v\.role, v\.headline, v\.full_quote, false, 'published'/);
+    expect(sql).toMatch(/where not exists \(\s*select 1 from public\.testimonials t where t\.attribution = v\.attribution/);
+  });
+
+  it("only fills existing testimonials' new fields while still blank", () => {
+    const updates = sql.match(/update public\.testimonials set[\s\S]*?;/g) ?? [];
+    expect(updates).toHaveLength(3);
+    for (const u of updates) expect(u).toMatch(/and headline = '' and full_quote = ''/);
+  });
+
+  it("allows clients as an overview page in the database too", () => {
+    expect(sql).toMatch(/slug in \('how-we-work', 'what-we-do', 'who-we-are', 'clients'\)/);
+  });
+});
+
+describe("testimonials section display", () => {
+  it("defaults to homepage highlights for sections saved before it existed", () => {
+    const parsed = pageSectionSchema.parse({ section_type: "testimonials", background: "none", content: {} });
+    if (parsed.section_type !== "testimonials") throw new Error("wrong type");
+    expect(parsed.content.display).toBe("highlights");
+  });
+
+  it("rejects an unknown display", () => {
+    const result = pageSectionSchema.safeParse({
+      section_type: "testimonials",
+      background: "none",
+      content: { display: "carousel" },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("testimonial input", () => {
+  it("defaults the Clients-page fields, so older forms still validate", async () => {
+    const { testimonialInputSchema } = await import("./testimonials-schema");
+    const parsed = testimonialInputSchema.parse({
+      quote: "Great.",
+      attribution: "A Person",
+      logo_url: null,
+      logo_alt: null,
+      sort_order: 0,
+    });
+    expect(parsed).toMatchObject({ headline: "", full_quote: "", show_on_homepage: true });
+  });
+});

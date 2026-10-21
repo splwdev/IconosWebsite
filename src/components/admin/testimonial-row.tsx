@@ -16,6 +16,9 @@ export function TestimonialRow({ testimonial }: { testimonial: TestimonialRowTyp
   const [quote, setQuote] = useState(testimonial.quote);
   const [attribution, setAttribution] = useState(testimonial.attribution);
   const [role, setRole] = useState(testimonial.role ?? "");
+  const [headline, setHeadline] = useState(testimonial.headline ?? "");
+  const [fullQuote, setFullQuote] = useState(testimonial.full_quote ?? "");
+  const [showOnHomepage, setShowOnHomepage] = useState(testimonial.show_on_homepage ?? true);
   const [logoUrl, setLogoUrl] = useState(testimonial.logo_url);
   const [logoAlt, setLogoAlt] = useState(testimonial.logo_alt ?? "");
   const [isSaving, startSaving] = useTransition();
@@ -28,6 +31,9 @@ export function TestimonialRow({ testimonial }: { testimonial: TestimonialRowTyp
     quote !== testimonial.quote ||
     attribution !== testimonial.attribution ||
     role !== (testimonial.role ?? "") ||
+    headline !== (testimonial.headline ?? "") ||
+    fullQuote !== (testimonial.full_quote ?? "") ||
+    showOnHomepage !== (testimonial.show_on_homepage ?? true) ||
     logoUrl !== testimonial.logo_url ||
     logoAlt !== (testimonial.logo_alt ?? "");
  
@@ -37,7 +43,17 @@ export function TestimonialRow({ testimonial }: { testimonial: TestimonialRowTyp
     run(async () => {
       const result = await saveTestimonial(
         testimonial.id,
-        { quote, attribution, role, logo_url: logoUrl, logo_alt: logoAlt, sort_order: testimonial.sort_order },
+        {
+          quote,
+          attribution,
+          role,
+          headline,
+          full_quote: fullQuote,
+          show_on_homepage: showOnHomepage,
+          logo_url: logoUrl,
+          logo_alt: logoAlt,
+          sort_order: testimonial.sort_order,
+        },
         status ? { status } : undefined
       );
       setMessage(
@@ -83,12 +99,35 @@ export function TestimonialRow({ testimonial }: { testimonial: TestimonialRowTyp
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto]">
         <div className="space-y-3">
           <div>
-            <label className="mb-1 block text-xs font-medium text-neutral-600">Quote</label>
+            <label className="mb-1 block text-xs font-medium text-neutral-600">
+              Short quote <span className="font-normal text-neutral-400">(homepage)</span>
+            </label>
             <textarea
               rows={2}
               className={inputClass}
               value={quote}
               onChange={(e) => setQuote(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-neutral-600">
+              Headline{" "}
+              <span className="font-normal text-neutral-400">
+                (optional, Clients page, e.g. &ldquo;Commercial and flexible in their approach.&rdquo;)
+              </span>
+            </label>
+            <input className={inputClass} value={headline} onChange={(e) => setHeadline(e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-neutral-600">
+              Full quote{" "}
+              <span className="font-normal text-neutral-400">(optional, Clients page — the short quote is used if blank)</span>
+            </label>
+            <textarea
+              rows={4}
+              className={inputClass}
+              value={fullQuote}
+              onChange={(e) => setFullQuote(e.target.value)}
             />
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -113,6 +152,15 @@ export function TestimonialRow({ testimonial }: { testimonial: TestimonialRowTyp
               <input className={inputClass} value={role} onChange={(e) => setRole(e.target.value)} />
             </div>
           </div>
+          <label className="flex items-center gap-2 text-sm text-neutral-700">
+            <input
+              type="checkbox"
+              checked={showOnHomepage}
+              onChange={(e) => setShowOnHomepage(e.target.checked)}
+              className="h-4 w-4 rounded border-neutral-300"
+            />
+            Show on homepage <span className="text-neutral-400">(every published testimonial shows on the Clients page)</span>
+          </label>
         </div>
  
         <div className="w-full sm:w-40">

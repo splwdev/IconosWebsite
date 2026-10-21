@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { PageSection, MediaSize } from "@/lib/content/page-sections";
 import { YouTubeEmbed } from "@/components/youtube-embed";
-import { TestimonialCard } from "@/components/testimonial-card";
+import { TestimonialCard, TestimonialFullCard } from "@/components/testimonial-card";
 import { getPublishedTestimonials } from "@/lib/content/testimonials";
 import { getPublishedPosts } from "@/lib/blog/posts";
 import { createClient } from "@/lib/supabase/server";
@@ -293,20 +293,28 @@ async function PageSectionBlock({ section }: { section: PageSection }) {
     }
 
     case "testimonials": {
-      const { eyebrow, heading, button_label, button_href } = section.content;
-      const testimonials = await getPublishedTestimonials();
+      const { eyebrow, heading, display, button_label, button_href } = section.content;
+      const showAll = display === "all";
+      const testimonials = await getPublishedTestimonials({ homepageOnly: !showAll });
       if (testimonials.length === 0) return null;
+      const hasHeader = Boolean(eyebrow || heading);
 
       return (
         <div>
-          <div className="max-w-3xl">
-            <SectionEyebrow>{eyebrow}</SectionEyebrow>
-            <SectionTitle>{heading}</SectionTitle>
-          </div>
-          <ul className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+          {hasHeader && (
+            <div className="mb-8 max-w-3xl">
+              <SectionEyebrow>{eyebrow}</SectionEyebrow>
+              <SectionTitle>{heading}</SectionTitle>
+            </div>
+          )}
+          <ul className={`grid grid-cols-1 gap-4 ${showAll ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
             {testimonials.map((t) => (
               <li key={t.id}>
-                <TestimonialCard {...t} onTint={section.background === "tint"} />
+                {showAll ? (
+                  <TestimonialFullCard {...t} onTint={section.background === "tint"} />
+                ) : (
+                  <TestimonialCard {...t} onTint={section.background === "tint"} />
+                )}
               </li>
             ))}
           </ul>
