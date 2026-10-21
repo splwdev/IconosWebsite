@@ -17,6 +17,7 @@ export function SubmissionRow({ submission }: { submission: ContactSubmission })
   // Older submissions predate these fields; blanks are simply skipped.
   const details = [
     { label: "Job title", value: submission.job_title },
+    { label: "LinkedIn", value: submission.linkedin_url },
     { label: "Employees", value: submission.company_size },
     { label: "Sector", value: submission.sector },
     ...(submission.service_details ?? []).map((d) => ({ label: d.question, value: d.answer })),

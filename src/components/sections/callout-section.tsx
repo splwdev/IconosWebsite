@@ -1,11 +1,38 @@
 import { Check } from "lucide-react";
 import type { CalloutSectionContent } from "@/lib/content/page-sections";
-import { ButtonLink, SectionTitle, mutedText } from "./section-primitives";
+import { ButtonLink, SectionEyebrow, SectionTitle, mutedText } from "./section-primitives";
 
 /** Outlined feature panel with optional info boxes alongside, e.g. "Data protection training". */
 export function CalloutSection({ content }: { content: CalloutSectionContent }) {
-  const { anchor, badge, heading, body, note, button_label, button_href, boxes } = content;
+  const { layout, eyebrow, anchor, badge, heading, body, note, button_label, button_href, boxes } = content;
   const hasBoxes = boxes.length > 0;
+
+  // Banner: text on the left, button on the right (e.g. "Referral partners").
+  if (layout === "side") {
+    return (
+      <div
+        id={anchor || undefined}
+        className="grid scroll-mt-6 items-center gap-6 rounded-3xl border border-brand-dark/15 p-6 sm:p-10 md:grid-cols-[3fr_2fr] md:gap-12"
+      >
+        <div>
+          {badge && (
+            <p className="mb-4 w-fit rounded-brand bg-brand-dark px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-white">
+              {badge}
+            </p>
+          )}
+          <SectionEyebrow>{eyebrow}</SectionEyebrow>
+          <SectionTitle>{heading}</SectionTitle>
+          {body && <p className={`mt-4 max-w-2xl text-body ${mutedText}`}>{body}</p>}
+          {note && <p className={`mt-3 max-w-2xl text-small ${mutedText}`}>{note}</p>}
+        </div>
+        {button_label && button_href && (
+          <div>
+            <ButtonLink href={button_href}>{button_label}</ButtonLink>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -20,6 +47,7 @@ export function CalloutSection({ content }: { content: CalloutSectionContent }) 
             {badge}
           </p>
         )}
+        <SectionEyebrow>{eyebrow}</SectionEyebrow>
         <SectionTitle>{heading}</SectionTitle>
         {body && <p className="mt-4 max-w-2xl text-body text-brand-dark/80">{body}</p>}
         {note && <p className={`mt-3 max-w-2xl text-small ${mutedText}`}>{note}</p>}

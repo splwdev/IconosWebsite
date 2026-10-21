@@ -944,7 +944,7 @@ function FeaturesSectionFields({
         ))}
         <button
           type="button"
-          onClick={() => onChange({ ...content, items: [...content.items, { title: "", body: "" }] })}
+          onClick={() => onChange({ ...content, items: [...content.items, { eyebrow: "", title: "", body: "" }] })}
           className="text-xs font-medium text-neutral-600 underline"
         >
           + Add column
@@ -961,7 +961,7 @@ function StepsSectionFields({
   content: StepsSectionContent;
   onChange: (content: StepsSectionContent) => void;
 }) {
-  function updateItem(index: number, field: "title" | "body", value: string) {
+  function updateItem(index: number, field: "eyebrow" | "title" | "body", value: string) {
     onChange({ ...content, items: content.items.map((it, i) => (i === index ? { ...it, [field]: value } : it)) });
   }
   function moveItem(index: number, delta: -1 | 1) {
@@ -980,6 +980,14 @@ function StepsSectionFields({
         <input className={inputClass} value={content.intro} onChange={(e) => onChange({ ...content, intro: e.target.value })} />
       </Field>
       <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-600">
+        <label className="flex items-center gap-1.5">
+          <input
+            type="checkbox"
+            checked={content.card_style === "outlined"}
+            onChange={(e) => onChange({ ...content, card_style: e.target.checked ? "outlined" : "filled" })}
+          />
+          Outlined cards (white with a thin border)
+        </label>
         <label className="flex items-center gap-1.5">
           <input
             type="checkbox"
@@ -1012,6 +1020,7 @@ function StepsSectionFields({
               {content.numbered ? String(index + 1).padStart(2, "0") : "•"}
             </span>
             <div className="flex-1 space-y-2">
+              <input className={inputClass} placeholder="Small label (optional), e.g. Consultancy" value={item.eyebrow} onChange={(e) => updateItem(index, "eyebrow", e.target.value)} />
               <input className={inputClass} placeholder="Card title" value={item.title} onChange={(e) => updateItem(index, "title", e.target.value)} />
               <textarea rows={2} className={inputClass} placeholder="Short description" value={item.body} onChange={(e) => updateItem(index, "body", e.target.value)} />
             </div>
@@ -1030,7 +1039,7 @@ function StepsSectionFields({
         ))}
         <button
           type="button"
-          onClick={() => onChange({ ...content, items: [...content.items, { title: "", body: "" }] })}
+          onClick={() => onChange({ ...content, items: [...content.items, { eyebrow: "", title: "", body: "" }] })}
           className="text-xs font-medium text-neutral-600 underline"
         >
           + Add card
@@ -1260,8 +1269,29 @@ function CalloutSectionFields({
   }
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-600">
+        Layout:
+        {(
+          [
+            ["stacked", "Button below, dark border"],
+            ["side", "Button on the right, light border"],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => onChange({ ...content, layout: value })}
+            className={`rounded border px-2 py-0.5 font-medium ${
+              content.layout === value ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <EyebrowField value={content.eyebrow} onChange={(eyebrow) => onChange({ ...content, eyebrow })} />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label="Badge" hint="optional, e.g. No subscription needed">
+        <Field label="Badge" hint="optional pill, e.g. No subscription needed">
           <input className={inputClass} value={content.badge} onChange={(e) => onChange({ ...content, badge: e.target.value })} />
         </Field>
         <Field label="Link anchor" hint="optional — lets other pages link to #this-name">

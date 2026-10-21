@@ -71,6 +71,8 @@ export const CTA_STYLES = ["light", "dark"] as const;
 export type CtaStyle = (typeof CTA_STYLES)[number];
 
 export const FEATURE_STYLES = ["light", "dark"] as const;
+export const CARD_STYLES = ["filled", "outlined"] as const;
+export const CALLOUT_LAYOUTS = ["stacked", "side"] as const;
 export type FeatureStyle = (typeof FEATURE_STYLES)[number];
 
 /**
@@ -278,6 +280,8 @@ export const issuesSectionContentSchema = z.object({
 export type IssuesSectionContent = z.infer<typeof issuesSectionContentSchema>;
 
 export const featureItemSchema = z.object({
+  /** Small label above the title (card grids only), e.g. "Consultancy". */
+  eyebrow: z.string().default(""),
   title: z.string().min(1, "Required"),
   body: z.string().default(""),
 });
@@ -314,6 +318,8 @@ export const stepsSectionContentSchema = z.object({
   intro: z.string().default(""),
   numbered: z.boolean().default(true),
   columns: z.union([z.literal(3), z.literal(4)]).default(4),
+  /** filled: cream/white cards. outlined: white cards with a thin border. */
+  card_style: z.enum(CARD_STYLES).default("filled"),
   items: z.array(featureItemSchema).default([]),
   final_card: finalCardSchema.default({}),
 });
@@ -381,6 +387,10 @@ const calloutBoxSchema = z.object({
  * panel an id so other pages can link straight to it (/page#anchor).
  */
 export const calloutSectionContentSchema = z.object({
+  /** stacked: button under the text, dark border (VDPO training). side: button to the right, light border. */
+  layout: z.enum(CALLOUT_LAYOUTS).default("stacked"),
+  /** Plain small label above the heading (the badge is the pill version). */
+  eyebrow: z.string().default(""),
   anchor: z
     .string()
     .default("")
@@ -618,6 +628,7 @@ export function createBlankSection(type: SectionType): PageSection {
           heading: "",
           intro: "",
           numbered: true,
+          card_style: "filled",
           columns: 4,
           items: [],
           final_card: { title: "", body: "", link_label: "", link_href: "" },
@@ -656,7 +667,18 @@ export function createBlankSection(type: SectionType): PageSection {
       return {
         section_type: "callout",
         background: "none",
-        content: { anchor: "", badge: "", heading: "", body: "", note: "", button_label: "", button_href: "", boxes: [] },
+        content: {
+          layout: "stacked",
+          eyebrow: "",
+          anchor: "",
+          badge: "",
+          heading: "",
+          body: "",
+          note: "",
+          button_label: "",
+          button_href: "",
+          boxes: [],
+        },
       };
   }
 }

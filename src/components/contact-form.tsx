@@ -16,44 +16,18 @@ import {
   type ServiceKey,
 } from "@/lib/contact/enquiry";
 import { TurnstileWidget } from "./turnstile-widget";
-
-const fieldClass =
-  "w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm text-brand-dark placeholder:text-neutral-400 " +
-  "focus:border-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-dark/15 aria-[invalid=true]:border-red-500";
-const labelClass = "mb-1.5 block text-sm font-medium text-brand-dark";
-const stepHeadingClass = "text-xs font-bold uppercase tracking-[0.14em] text-brand-dark";
+import {
+  ChoiceCard,
+  FieldError,
+  Required,
+  SelectChevron,
+  fieldClass,
+  invalidProps as invalid,
+  labelClass,
+  stepHeadingClass,
+} from "./form-fields";
 
 type Answers = Record<string, string | string[]>;
-
-function Required() {
-  return (
-    <span aria-hidden="true" className="text-brand-dark">
-      {" "}
-      *
-    </span>
-  );
-}
-
-function FieldError({ id, message }: { id: string; message?: string }) {
-  if (!message) return null;
-  return (
-    <p id={id} className="mt-1.5 text-xs text-red-600">
-      {message}
-    </p>
-  );
-}
-
-function SelectChevron() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 20 20"
-      className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-dark/60"
-    >
-      <path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 export function ContactForm({
   nonce,
@@ -151,8 +125,6 @@ export function ContactForm({
       </div>
     );
   }
-
-  const invalid = (hasError: boolean) => (hasError ? { "aria-invalid": true as const } : {});
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-12">
@@ -286,42 +258,19 @@ export function ContactForm({
           Choose the option that fits best. Not sure? That&apos;s fine, we&apos;ll help you work it out.
         </p>
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {SERVICES.map((s, i) => {
-            const isSelected = selectedKey === s.key;
-            const isLast = i === SERVICES.length - 1;
-            return (
-              <label
-                key={s.key}
-                className={`relative flex cursor-pointer flex-col rounded-2xl border p-5 transition-colors focus-within:ring-2 focus-within:ring-brand-dark focus-within:ring-offset-2 ${
-                  isLast ? "sm:col-span-2" : ""
-                } ${
-                  isSelected
-                    ? "border-brand-dark bg-brand-dark text-white"
-                    : "border-neutral-300 bg-white text-brand-dark hover:border-brand-dark/50"
-                }`}
-              >
-                <input
-                  type="radio"
-                  value={s.key}
-                  checked={isSelected}
-                  onChange={() => chooseService(s.key)}
-                  className="sr-only"
-                  name="service"
-                />
-                <span
-                  className={`text-[0.6875rem] font-bold uppercase tracking-[0.14em] ${
-                    isSelected ? "text-white/70" : "text-brand-dark/60"
-                  }`}
-                >
-                  {s.eyebrow}
-                </span>
-                <span className="mt-1.5 text-base font-semibold">{s.title}</span>
-                <span className={`mt-1 text-sm ${isSelected ? "text-white/80" : "text-brand-dark/70"}`}>
-                  {s.description}
-                </span>
-              </label>
-            );
-          })}
+          {SERVICES.map((s, i) => (
+            <ChoiceCard
+              key={s.key}
+              name="service"
+              value={s.key}
+              checked={selectedKey === s.key}
+              onSelect={() => chooseService(s.key)}
+              eyebrow={s.eyebrow}
+              title={s.title}
+              description={s.description}
+              wide={i === SERVICES.length - 1}
+            />
+          ))}
         </div>
         <FieldError id="service-error" message={errors.service?.message} />
 

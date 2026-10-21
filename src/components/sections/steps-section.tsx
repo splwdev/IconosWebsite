@@ -10,8 +10,9 @@ import { SectionEyebrow, SectionTitle, mutedText } from "./section-primitives";
  * list of benefit cards ("What you get").
  */
 export function StepsSection({ content, onTint }: { content: StepsSectionContent; onTint: boolean }) {
-  const { eyebrow, heading, intro, items, numbered, columns, final_card } = content;
-  const cardBg = onTint ? "bg-white" : "bg-brand-cream";
+  const { eyebrow, heading, intro, items, numbered, columns, card_style, final_card } = content;
+  const cardBg =
+    card_style === "outlined" ? "border border-brand-dark/15 bg-white" : onTint ? "bg-white" : "bg-brand-cream";
   const List = numbered ? "ol" : "ul";
   const gridCols = columns === 3 ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-2 lg:grid-cols-4";
 
@@ -30,6 +31,11 @@ export function StepsSection({ content, onTint }: { content: StepsSectionContent
                 <span aria-hidden className={`mb-2 block text-xs font-medium tabular-nums ${mutedText}`}>
                   {String(i + 1).padStart(2, "0")}
                 </span>
+              )}
+              {item.eyebrow && (
+                <p className={`mb-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.16em] ${mutedText}`}>
+                  {item.eyebrow}
+                </p>
               )}
               <h3 className="text-h4 font-semibold text-brand-dark">{item.title}</h3>
               {item.body && <p className={`mt-2 text-small ${mutedText}`}>{item.body}</p>}

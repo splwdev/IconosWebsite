@@ -9,6 +9,9 @@ const ENQUIRY_TYPES: EnquiryType[] = [
   "Data Protection Training",
   "Ad Hoc Work",
   "Not Sure Yet",
+  "Consultant Lawyer",
+  "Referral Partner",
+  "Work With Us (Other)",
   "General Enquiry",
 ];
  
@@ -55,7 +58,7 @@ export default async function AdminContactSubmissionsPage({
       <div className="mb-8">
         <h1 className="text-2xl font-semibold text-neutral-900">Contact submissions</h1>
         <p className="mt-1 text-sm text-neutral-500">
-          Enquiries received through the contact form. Emails are sent separately via Microsoft
+          Enquiries from the contact and Work With Us forms. Emails are sent separately via Microsoft
           Graph — this is the stored audit trail.{" "}
           {(unreadCount ?? 0) > 0 && (
             <span className="font-medium text-neutral-700">{unreadCount} unread.</span>
