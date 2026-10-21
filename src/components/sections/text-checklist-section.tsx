@@ -39,6 +39,8 @@ export function TextChecklistSection({ content }: { content: TextChecklistSectio
                 </Link>
               </>
             )}
+            {content.note_after && (/^[.,;:!?)]/.test(content.note_after) ? "" : " ")}
+            {content.note_after}
           </p>
         )}
       </div>
