@@ -47,7 +47,7 @@ export default async function WorkWithUsPage() {
       />
       <Section tint>
         <Container className="text-center">
-          <PrimaryButton href="/work-with-us/get-in-touch">Start a conversation</PrimaryButton>
+          <PrimaryButton href="/work-with-us/enquiry">Start a conversation</PrimaryButton>
         </Container>
       </Section>
     </>

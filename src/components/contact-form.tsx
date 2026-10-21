@@ -8,14 +8,16 @@ import { submitContactForm } from "@/app/(site)/contact/actions";
 import {
   EMPLOYEE_OPTIONS,
   HEARD_ABOUT_OPTIONS,
+  MARKETING_OPT_IN_WORDING,
   SERVICES,
   enquiryFormSchema,
   getService,
   type EnquiryFormInput,
-  type FollowUpQuestion,
   type ServiceKey,
 } from "@/lib/contact/enquiry";
 import { TurnstileWidget } from "./turnstile-widget";
+import { FollowUp } from "./follow-up-question";
+import { HoneypotField } from "./form-fields";
 import {
   ChoiceCard,
   FieldError,
@@ -61,6 +63,7 @@ export function ContactForm({
       privacyAgreed: false as unknown as true,
       marketingOptIn: false,
       turnstileToken: "",
+      website: "",
     },
   });
 
@@ -128,6 +131,7 @@ export function ContactForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-12">
+      <HoneypotField register={() => register("website")} />
       {/* 1. About you */}
       <fieldset className="space-y-5">
         <legend className={`${stepHeadingClass} mb-5`}>1. About you</legend>
@@ -351,7 +355,7 @@ export function ContactForm({
               className="mt-0.5 h-4 w-4 flex-shrink-0 rounded border-neutral-400"
               {...register("marketingOptIn")}
             />
-            <span>I&apos;d like to receive occasional news and insights from Iconos by email. You can unsubscribe at any time.</span>
+            <span>{MARKETING_OPT_IN_WORDING}</span>
           </label>
         </div>
       </fieldset>
@@ -397,71 +401,5 @@ export function ContactForm({
         </div>
       </div>
     </form>
-  );
-}
-
-function FollowUp({
-  question,
-  value,
-  onChange,
-}: {
-  question: FollowUpQuestion;
-  value: string | string[] | undefined;
-  onChange: (id: string, value: string | string[]) => void;
-}) {
-  const id = `q-${question.id}`;
-  const span = question.width === "half" ? "" : "sm:col-span-2";
-
-  if (question.type === "checkboxes") {
-    const checked = Array.isArray(value) ? value : [];
-    return (
-      <fieldset className={span}>
-        <legend className={labelClass}>
-          {question.label} <span className="font-normal text-brand-dark/60">(tick any)</span>
-        </legend>
-        <div className="mt-1 grid grid-cols-1 gap-x-4 gap-y-2.5 sm:grid-cols-3">
-          {question.options.map((option) => (
-            <label key={option} className="flex items-center gap-2.5 text-sm text-brand-dark">
-              <input
-                type="checkbox"
-                className="h-4 w-4 flex-shrink-0 rounded border-neutral-400"
-                checked={checked.includes(option)}
-                onChange={(e) =>
-                  onChange(
-                    question.id,
-                    e.target.checked ? [...checked, option] : checked.filter((c) => c !== option)
-                  )
-                }
-              />
-              {option}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-    );
-  }
-
-  return (
-    <div className={span}>
-      <label htmlFor={id} className={labelClass}>
-        {question.label}
-      </label>
-      <div className="relative">
-        <select
-          id={id}
-          className={`${fieldClass} appearance-none border-transparent pr-10`}
-          value={typeof value === "string" ? value : ""}
-          onChange={(e) => onChange(question.id, e.target.value)}
-        >
-          <option value="">Please select</option>
-          {question.options.map((o) => (
-            <option key={o} value={o}>
-              {o}
-            </option>
-          ))}
-        </select>
-        <SelectChevron />
-      </div>
-    </div>
   );
 }

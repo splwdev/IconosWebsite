@@ -73,7 +73,7 @@ describe("enquiryFormSchema", () => {
   });
 
   it("rejects several answers to a single-choice question", () => {
-    expect(enquiryFormSchema.safeParse({ ...valid, answers: { in_house_team: ["No", "Yes, one person"] } }).success).toBe(
+    expect(enquiryFormSchema.safeParse({ ...valid, answers: { in_house_team: ["No", "Not sure"] } }).success).toBe(
       false
     );
   });
@@ -163,5 +163,38 @@ describe("contact form settings", () => {
       direct_phone: "call me",
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe("Iconos's specified options (Oct 2026)", () => {
+  it("uses their employee bands and heard-about list", async () => {
+    const { EMPLOYEE_OPTIONS, HEARD_ABOUT_OPTIONS } = await import("./enquiry");
+    expect(EMPLOYEE_OPTIONS).toEqual(["1 to 10", "11 to 50", "51 to 250", "More than 250"]);
+    expect(HEARD_ABOUT_OPTIONS).toEqual(["LinkedIn", "Recommendation or referral", "Search engine", "Event", "Our newsletter", "Other"]);
+  });
+
+  it("uses their ad hoc matter types", () => {
+    const adhoc = SERVICES.find((s) => s.key === "adhoc");
+    expect(adhoc?.questions[0]?.options).toContain("Shareholders' agreement");
+    expect(adhoc?.questions[0]?.options).toContain("Data breach response");
+  });
+
+  it("accepts the honeypot field (the server drops filled ones)", () => {
+    expect(enquiryFormSchema.parse({ ...valid, website: "http://spam" }).website).toBe("http://spam");
+  });
+});
+
+describe("email text", () => {
+  it("formats the submitted time in UK time", async () => {
+    const { formatSubmittedAt } = await import("./email-text");
+    expect(formatSubmittedAt(new Date("2026-10-21T12:10:00Z"))).toBe("Wednesday 21 October 2026, 13:10 (UK time)");
+    expect(formatSubmittedAt(new Date("2026-12-01T09:05:00Z"))).toBe("Tuesday 1 December 2026, 09:05 (UK time)");
+  });
+
+  it("labels every line and shows blanks as a dash", async () => {
+    const { renderSections } = await import("./email-text");
+    expect(
+      renderSections([{ heading: "About you", lines: [{ label: "Name", value: "Ada" }, { label: "Phone", value: "" }] }])
+    ).toBe("ABOUT YOU\nName: Ada\nPhone: —");
   });
 });

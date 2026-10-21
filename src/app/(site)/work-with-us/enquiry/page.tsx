@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "Work With Us — Get in Touch | Iconos Group",
   description:
     "Consultant lawyers and referral partners: tell us a little about yourself and how you'd like to work with Iconos Group.",
-  alternates: { canonical: "/work-with-us/get-in-touch" },
+  alternates: { canonical: "/work-with-us/enquiry" },
 };
 
 export default async function WorkWithUsGetInTouchPage({

@@ -3,9 +3,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { sendGraphMail } from "@/lib/graph-mail";
 import { verifyTurnstileToken } from "@/lib/contact/turnstile";
+import { formatSubmittedAt, renderSections, type EmailSection } from "@/lib/contact/email-text";
 import { loadContactFormSettings } from "@/lib/settings/load-contact-form";
-import type { ContactFormSettings } from "@/lib/settings/contact-form";
 import {
+  MARKETING_OPT_IN_WORDING,
   describeAnswers,
   enquiryFormSchema,
   getService,
@@ -23,66 +24,39 @@ function fullName(values: EnquiryFormValues): string {
   return `${values.firstName} ${values.lastName}`.trim();
 }
 
-/** Plain-text email body: every field, labelled, blanks shown as "—". */
-function buildNotificationText(values: EnquiryFormValues, enquiryType: string, details: EnquiryDetail[]): string {
-  const line = (label: string, value: string) => `${label}: ${value || "—"}`;
+/** Every answer, labelled — used for the notification and the enquirer's copy. */
+function answerSections(values: EnquiryFormValues, enquiryType: string, details: EnquiryDetail[]): EmailSection[] {
   return [
-    "ABOUT THEM",
-    line("Name", fullName(values)),
-    line("Email", values.email),
-    line("Phone", values.phone),
-    line("Job title", values.jobTitle),
-    "",
-    "THEIR BUSINESS",
-    line("Company", values.company),
-    line("Employees", values.employees),
-    line("Sector", values.sector),
-    "",
-    "HOW WE CAN HELP",
-    line("Service", enquiryType),
-    ...details.map((d) => line(d.question, d.answer)),
-    "",
-    "WHAT THEY NEED",
-    values.message,
-    "",
-    line("Heard about us", values.heardAbout),
-    line("Marketing emails", values.marketingOptIn ? "Yes, opted in" : "No"),
-  ].join("\n");
-}
-
-async function sendNotificationEmail(
-  values: EnquiryFormValues,
-  enquiryType: string,
-  details: EnquiryDetail[],
-  settings: ContactFormSettings
-): Promise<boolean> {
-  return sendGraphMail({
-    toEmail: settings.recipient_email,
-    ccEmails: settings.cc_emails,
-    replyToEmail: values.email,
-    fromDisplayName: settings.sender_display_name,
-    subject: `New enquiry: ${enquiryType} — ${values.company}`,
-    text: buildNotificationText(values, enquiryType, details),
-  });
-}
-
-/**
- * Best-effort confirmation email to the enquirer. Never blocks or fails the
- * overall submission — a missed auto-reply is logged, not surfaced.
- */
-async function sendAutoreplyEmail(values: EnquiryFormValues, settings: ContactFormSettings): Promise<void> {
-  if (!settings.send_autoreply) return;
-  try {
-    await sendGraphMail({
-      toEmail: values.email,
-      replyToEmail: settings.recipient_email,
-      fromDisplayName: settings.sender_display_name,
-      subject: settings.autoreply_subject,
-      text: settings.autoreply_message,
-    });
-  } catch (err) {
-    console.error("[contact form] Auto-reply failed (non-blocking):", err);
-  }
+    {
+      heading: "About you",
+      lines: [
+        { label: "Name", value: fullName(values) },
+        { label: "Work email", value: values.email },
+        { label: "Phone", value: values.phone },
+        { label: "Job title", value: values.jobTitle },
+      ],
+    },
+    {
+      heading: "About your business",
+      lines: [
+        { label: "Company", value: values.company },
+        { label: "Number of employees", value: values.employees },
+        { label: "Sector", value: values.sector },
+      ],
+    },
+    {
+      heading: "How can we help?",
+      lines: [{ label: "Service", value: enquiryType }, ...details.map((d) => ({ label: d.question, value: d.answer }))],
+    },
+    {
+      heading: "Anything else?",
+      lines: [
+        { label: "How did you hear about us", value: values.heardAbout },
+        { label: "Marketing emails", value: values.marketingOptIn ? "Yes, opted in" : "No" },
+      ],
+      text: `\nWhat you need:\n${values.message}`,
+    },
+  ];
 }
 
 export async function submitContactForm(input: EnquiryFormInput): Promise<ContactFormResult> {
@@ -91,6 +65,10 @@ export async function submitContactForm(input: EnquiryFormInput): Promise<Contac
     return { ok: false, errors: [...new Set(parsed.error.issues.map((i) => i.message))] };
   }
   const values = parsed.data;
+
+  // Honeypot filled in: almost certainly a bot. Look successful, do nothing.
+  if (values.website) return { ok: true };
+
   const service = getService(values.service);
   if (!service) return { ok: false, errors: ["Please choose how we can help."] };
 
@@ -99,9 +77,19 @@ export async function submitContactForm(input: EnquiryFormInput): Promise<Contac
     return { ok: false, errors: ["Verification failed — please try the form again."] };
   }
 
+  const submittedAt = new Date();
   const details = describeAnswers(values);
+  const sections = answerSections(values, service.enquiryType, details);
   const settings = await loadContactFormSettings();
-  const emailSent = await sendNotificationEmail(values, service.enquiryType, details, settings);
+
+  const emailSent = await sendGraphMail({
+    toEmail: settings.recipient_email,
+    ccEmails: settings.cc_emails,
+    replyToEmail: values.email,
+    fromDisplayName: settings.sender_display_name,
+    subject: `New website enquiry: ${service.enquiryType}, ${values.company}`,
+    text: [`Submitted: ${formatSubmittedAt(submittedAt)}`, renderSections(sections)].join("\n\n"),
+  });
 
   // Stored regardless of email outcome — the audit trail and fallback if
   // Graph has an outage.
@@ -122,8 +110,12 @@ export async function submitContactForm(input: EnquiryFormInput): Promise<Contac
     heard_about: values.heardAbout,
     privacy_agreed: values.privacyAgreed,
     marketing_opt_in: values.marketingOptIn,
+    // A record of the opt-in: when, and the exact wording agreed to.
+    marketing_opt_in_at: values.marketingOptIn ? submittedAt.toISOString() : null,
+    marketing_opt_in_wording: values.marketingOptIn ? MARKETING_OPT_IN_WORDING : "",
     turnstile_verified: turnstileOk,
     email_sent: emailSent,
+    created_at: submittedAt.toISOString(),
   });
 
   if (dbError) {
@@ -137,6 +129,25 @@ export async function submitContactForm(input: EnquiryFormInput): Promise<Contac
     }
   }
 
-  await sendAutoreplyEmail(values, settings);
+  // Confirmation with a copy of their answers. Best effort: a missed
+  // auto-reply is logged, never shown to the visitor.
+  if (settings.send_autoreply) {
+    try {
+      await sendGraphMail({
+        toEmail: values.email,
+        replyToEmail: settings.recipient_email,
+        fromDisplayName: settings.sender_display_name,
+        subject: settings.autoreply_subject,
+        text: [
+          settings.autoreply_message,
+          `For your records, here's a copy of what you sent us on ${formatSubmittedAt(submittedAt)}:`,
+          renderSections(sections),
+        ].join("\n\n"),
+      });
+    } catch (err) {
+      console.error("[contact form] Auto-reply failed (non-blocking):", err);
+    }
+  }
+
   return { ok: true };
 }

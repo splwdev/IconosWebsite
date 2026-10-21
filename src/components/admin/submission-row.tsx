@@ -22,7 +22,16 @@ export function SubmissionRow({ submission }: { submission: ContactSubmission })
     { label: "Sector", value: submission.sector },
     ...(submission.service_details ?? []).map((d) => ({ label: d.question, value: d.answer })),
     { label: "Heard about us", value: submission.heard_about },
-    { label: "Marketing emails", value: submission.marketing_opt_in ? "Opted in" : "" },
+    {
+      label: "Marketing emails",
+      value: submission.marketing_opt_in
+        ? `Opted in${
+            submission.marketing_opt_in_at
+              ? ` on ${new Date(submission.marketing_opt_in_at).toLocaleString("en-GB", { timeZone: "Europe/London" })}`
+              : ""
+          }${submission.marketing_opt_in_wording ? ` — agreed to: “${submission.marketing_opt_in_wording}”` : ""}`
+        : "",
+    },
   ].filter((d) => d.value);
  
   function toggleRead() {

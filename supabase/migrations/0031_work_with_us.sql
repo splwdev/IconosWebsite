@@ -102,7 +102,7 @@ begin
       "body": "We work with accountants, consultants and other trusted advisers who want to connect their clients with practical, commercially minded legal expertise.",
       "note": "",
       "button_label": "Discuss a referral partnership",
-      "button_href": "/work-with-us/get-in-touch?interest=referral",
+      "button_href": "/work-with-us/enquiry?interest=referral",
       "boxes": []
     }$json$::jsonb, 2),
 
@@ -112,7 +112,7 @@ begin
       "body": "Tell us about your experience and how you'd like to work with Iconos.",
       "style": "dark",
       "button_label": "Start a conversation",
-      "button_href": "/work-with-us/get-in-touch",
+      "button_href": "/work-with-us/enquiry",
       "secondary_button_label": "",
       "secondary_button_href": ""
     }$json$::jsonb, 3);

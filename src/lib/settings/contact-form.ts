@@ -17,6 +17,10 @@ export const DEFAULT_WWU_NEXT_STEPS = [
   { title: "We read your message", body: "Every enquiry is reviewed by the team." },
   { title: "We get in touch", body: "If there's a good fit, we'll arrange an informal chat." },
 ];
+export const DEFAULT_AUTOREPLY_MESSAGE =
+  "Thank you, we've got your enquiry. We'll be in touch within one working day.";
+const DEFAULT_WWU_AUTOREPLY_MESSAGE =
+  "Thank you, we've got your message. Every enquiry is reviewed by the team, and if there's a good fit we'll be in touch to arrange an informal chat.";
 const DEFAULT_WWU_TITLE = "Let's work together.";
 const DEFAULT_WWU_INTRO =
   "Whether you're a consultant lawyer or a potential referral partner, tell us a little about yourself and we'll be in touch.";
@@ -52,11 +56,19 @@ export const contactFormSettingsSchema = z.object({
     .max(30)
     .regex(/^[0-9+()\s-]*$/, "Digits, spaces, +, - and brackets only")
     .default("020 4539 5800"),
-  // Work With Us form page (/work-with-us/get-in-touch). Same recipients.
+  // Work With Us form page (/work-with-us/enquiry). Same recipients.
   wwu_page_title: z.string().trim().min(1, "Required").max(120).default(DEFAULT_WWU_TITLE),
   wwu_page_intro: z.string().trim().min(1, "Required").max(300).default(DEFAULT_WWU_INTRO),
   wwu_next_steps: z.array(nextStepSchema).length(2, "Two steps").default(DEFAULT_WWU_NEXT_STEPS),
   wwu_help_text: z.string().trim().max(300).default(DEFAULT_WWU_HELP_TEXT),
+  /** Where Work With Us enquiries go; blank means the main recipient above. */
+  wwu_recipient_email: z
+    .string()
+    .trim()
+    .default("")
+    .refine((v) => v === "" || z.string().email().safeParse(v).success, "Enter a valid email address, or leave blank"),
+  wwu_autoreply_subject: z.string().trim().min(1, "Required").max(150).default("We've received your message"),
+  wwu_autoreply_message: z.string().trim().min(1, "Required").max(2000).default(DEFAULT_WWU_AUTOREPLY_MESSAGE),
 });
  
 export type ContactFormSettings = z.infer<typeof contactFormSettingsSchema>;
@@ -71,8 +83,7 @@ export const DEFAULT_CONTACT_FORM_SETTINGS: ContactFormSettings = {
   sender_display_name: "Iconos Group Website",
   send_autoreply: true,
   autoreply_subject: "We've received your enquiry",
-  autoreply_message:
-    "Thanks for getting in touch with Iconos Group. A member of our team will be in touch shortly.",
+  autoreply_message: DEFAULT_AUTOREPLY_MESSAGE,
   page_intro: "Tell us a little about your business and what you're enquiring about, and we'll get back to you.",
   next_steps: DEFAULT_NEXT_STEPS,
   direct_email: "legal@iconos-group.com",
@@ -81,4 +92,7 @@ export const DEFAULT_CONTACT_FORM_SETTINGS: ContactFormSettings = {
   wwu_page_intro: DEFAULT_WWU_INTRO,
   wwu_next_steps: DEFAULT_WWU_NEXT_STEPS,
   wwu_help_text: DEFAULT_WWU_HELP_TEXT,
+  wwu_recipient_email: "",
+  wwu_autoreply_subject: "We've received your message",
+  wwu_autoreply_message: DEFAULT_WWU_AUTOREPLY_MESSAGE,
 };
