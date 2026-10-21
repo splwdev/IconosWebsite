@@ -1,3 +1,4 @@
+import { isBlogEnabled } from "@/lib/settings/blog";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -39,7 +40,7 @@ export default async function AdminLayout({
     getPublicNavGroups(),
     supabase.from("contact_submissions").select("*", { count: "exact", head: true }).is("read_at", null),
   ]);
-  const nav = buildPrimaryNav(whatWeDo, howWeWork, customLinks);
+  const nav = buildPrimaryNav(whatWeDo, howWeWork, customLinks, await isBlogEnabled());
  
   return (
     <div className="min-h-screen bg-neutral-50">

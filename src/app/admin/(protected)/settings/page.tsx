@@ -3,6 +3,9 @@ import { ContactFormSettingsCard } from "@/components/admin/contact-form-setting
 import { FormsStatusCard } from "@/components/admin/forms-status-card";
 import { DEFAULT_CONTACT_FORM_SETTINGS } from "@/lib/settings/contact-form";
 import { getStaffContext } from "@/lib/admin/staff-context";
+import { BlogSwitchCard } from "@/components/admin/blog-switch-card";
+import { isBlogEnabled } from "@/lib/settings/blog";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +26,13 @@ export default async function AdminSettingsPage() {
     );
   }
 
-  const [loaded, status] = await Promise.all([getContactFormSettings(), getFormsStatus()]);
+  const supabase = await createClient();
+  const [loaded, status, blogEnabled, { count: publishedPosts }] = await Promise.all([
+    getContactFormSettings(),
+    getFormsStatus(),
+    isBlogEnabled(),
+    supabase.from("posts").select("*", { count: "exact", head: true }).eq("status", "published"),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -34,6 +43,8 @@ export default async function AdminSettingsPage() {
           integrations are managed separately by your development team.
         </p>
       </div>
+
+      <BlogSwitchCard initialEnabled={blogEnabled} publishedCount={publishedPosts ?? 0} />
 
       <FormsStatusCard status={status} />
 

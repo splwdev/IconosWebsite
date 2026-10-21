@@ -4,6 +4,7 @@ import { PageHero } from "@/components/page-hero";
 import { Container, Section } from "@/components/ui";
 import { YouTubeEmbed } from "@/components/youtube-embed";
 import { getPublishedPostBySlug } from "@/lib/blog/posts";
+import { canViewBlog } from "@/lib/settings/blog-access";
  
 // No generateStaticParams, and deliberately no ISR revalidate window either
 // — this always renders fresh per request, consistent with every other
@@ -32,6 +33,8 @@ export default async function BlogPostPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  // Hidden while the Blog is switched off (admin → Settings); staff can preview.
+  if (!(await canViewBlog())) notFound();
   const { slug } = await params;
   const post = await getPublishedPostBySlug(slug);
   if (!post) notFound();

@@ -2,19 +2,23 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHero } from "@/components/page-hero";
 import { Container, Section } from "@/components/ui";
+import { notFound } from "next/navigation";
 import { getPublishedPosts } from "@/lib/blog/posts";
+import { canViewBlog } from "@/lib/settings/blog-access";
 
 export const metadata: Metadata = {
   title: "Blog | Iconos Group",
   description: "Weekly, practical, commercially minded legal insight from Iconos Group.",
 };
 
-// Revalidate frequently rather than statically generate, since posts are
-// staff-published at any time; publishPost() also explicitly revalidates
-// this path so changes are visible immediately, not just after 60s.
-export const revalidate = 60;
+// Rendered per request: posts are published at any time, and while the
+// Blog is switched off only signed-in staff may see it, so a cached copy
+// must never be served.
+export const dynamic = "force-dynamic";
 
 export default async function BlogIndexPage() {
+  // Hidden while the Blog is switched off (admin → Settings); staff can preview.
+  if (!(await canViewBlog())) notFound();
   const posts = await getPublishedPosts();
 
   return (
