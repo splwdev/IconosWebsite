@@ -249,6 +249,59 @@ export function ContactFormSettingsCard({
           </div>
         </div>
 
+        <div className="space-y-4 border-t border-black/5 pt-5">
+          <div>
+            <h3 className="text-sm font-semibold text-brand-dark">Work With Us form</h3>
+            <p className="mt-0.5 text-xs text-neutral-400">
+              The text around the form on /work-with-us/get-in-touch. Enquiries go to the same recipients.
+            </p>
+          </div>
+          <div>
+            <label htmlFor="wwu_page_title" className="mb-1 block text-sm font-medium text-brand-dark">
+              Heading
+            </label>
+            <input id="wwu_page_title" className={inputClass} {...register("wwu_page_title")} />
+            {errors.wwu_page_title && <p className="mt-1 text-xs text-red-600">{errors.wwu_page_title.message}</p>}
+          </div>
+          <div>
+            <label htmlFor="wwu_page_intro" className="mb-1 block text-sm font-medium text-brand-dark">
+              Intro under the heading
+            </label>
+            <textarea id="wwu_page_intro" rows={2} className={inputClass} {...register("wwu_page_intro")} />
+            {errors.wwu_page_intro && <p className="mt-1 text-xs text-red-600">{errors.wwu_page_intro.message}</p>}
+          </div>
+          <fieldset className="space-y-3">
+            <legend className="mb-1 text-sm font-medium text-brand-dark">&ldquo;What happens next&rdquo; steps</legend>
+            {[0, 1].map((i) => (
+              <div key={i} className="grid grid-cols-1 gap-2 sm:grid-cols-[2rem_1fr_2fr] sm:items-start">
+                <span className="pt-2.5 text-sm font-semibold text-neutral-400">{i + 1}.</span>
+                <input
+                  aria-label={`Work With Us step ${i + 1} title`}
+                  placeholder="Title"
+                  className={inputClass}
+                  {...register(`wwu_next_steps.${i}.title` as const)}
+                />
+                <input
+                  aria-label={`Work With Us step ${i + 1} text`}
+                  placeholder="Text"
+                  className={inputClass}
+                  {...register(`wwu_next_steps.${i}.body` as const)}
+                />
+              </div>
+            ))}
+            {errors.wwu_next_steps && (
+              <p className="text-xs text-red-600">Each step needs a title (up to 80 characters).</p>
+            )}
+          </fieldset>
+          <div>
+            <label htmlFor="wwu_help_text" className="mb-1 block text-sm font-medium text-brand-dark">
+              &ldquo;Looking for legal support?&rdquo; text{" "}
+              <span className="font-normal text-neutral-400">(links to the enquiry form)</span>
+            </label>
+            <textarea id="wwu_help_text" rows={2} className={inputClass} {...register("wwu_help_text")} />
+          </div>
+        </div>
+
         {status === "error" && serverErrors.length > 0 && (
           <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
             {serverErrors.map((e) => (

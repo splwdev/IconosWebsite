@@ -1,39 +1,53 @@
 import type { Metadata } from "next";
 import { PageHero } from "@/components/page-hero";
+import { PageSectionsRenderer } from "@/components/page-sections-renderer";
 import { Container, Section, PrimaryButton } from "@/components/ui";
+import { getOverviewPage } from "@/lib/content/overview-pages";
+import { getPageSections } from "@/lib/content/get-page-sections";
 
-export const metadata: Metadata = {
+const FALLBACK_META = {
   title: "Work With Us | Iconos Group",
   description:
-    "Iconos Group welcomes experienced, independent lawyers and like-minded solicitors to join the team, permanently or ad hoc.",
+    "Consultant lawyers, data protection professionals and referral partners: join a commercially minded legal team.",
 };
 
-export default function WorkWithUsPage() {
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await getOverviewPage("work-with-us");
+  if (!page) return FALLBACK_META;
+  return {
+    title: FALLBACK_META.title,
+    description: page.meta_description || page.summary || FALLBACK_META.description,
+  };
+}
+
+export default async function WorkWithUsPage() {
+  const page = await getOverviewPage("work-with-us");
+
+  // Editable page (admin → Pages → Work With Us). Header comes from the
+  // page's own eyebrow/heading/intro fields; everything below is sections.
+  if (page) {
+    const sections = await getPageSections(page.id);
+    return (
+      <>
+        <PageHero eyebrow={page.tag ?? undefined} title={page.title} intro={page.summary} />
+        <Container className="pb-8 pt-12 sm:pt-16">
+          <PageSectionsRenderer sections={sections} />
+        </Container>
+      </>
+    );
+  }
+
+  // Fallback until the page row exists (migration 0031).
   return (
     <>
       <PageHero
         eyebrow="Work with us"
-        title="Join a team of independent, commercially minded lawyers."
-        intro="We work with experienced, fully qualified independent lawyers and like-minded solicitors, either on a permanent or ad hoc basis."
+        title="Join a commercially minded legal team."
+        intro="We work with experienced consultant lawyers, data protection professionals and like-minded people who believe legal advice should help businesses grow, not slow them down."
       />
-      <Section>
-        <Container className="max-w-2xl space-y-5 text-body text-neutral-700">
-          <p>
-            If you&apos;re a commercially minded lawyer who believes legal
-            advice should help close deals rather than slow them down,
-            we&apos;d like to hear from you. Iconos Group works flexibly
-            with consultant lawyers across corporate, commercial and data
-            protection law.
-          </p>
-          <p>
-            Tell us about your experience and the kind of work
-            you&apos;re looking for, and we&apos;ll be in touch.
-          </p>
-        </Container>
-      </Section>
       <Section tint>
         <Container className="text-center">
-          <PrimaryButton href="/contact">Get in touch about opportunities</PrimaryButton>
+          <PrimaryButton href="/work-with-us/get-in-touch">Start a conversation</PrimaryButton>
         </Container>
       </Section>
     </>

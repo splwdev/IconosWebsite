@@ -13,6 +13,16 @@ export const DEFAULT_NEXT_STEPS = [
   { title: "A no-obligation chat", body: "We'll understand your business and suggest the right approach." },
 ];
 
+export const DEFAULT_WWU_NEXT_STEPS = [
+  { title: "We read your message", body: "Every enquiry is reviewed by the team." },
+  { title: "We get in touch", body: "If there's a good fit, we'll arrange an informal chat." },
+];
+const DEFAULT_WWU_TITLE = "Let's work together.";
+const DEFAULT_WWU_INTRO =
+  "Whether you're a consultant lawyer or a potential referral partner, tell us a little about yourself and we'll be in touch.";
+const DEFAULT_WWU_HELP_TEXT =
+  "This form is for consultant lawyers and referral partners. For help with your business, use our enquiry form.";
+
 export const contactFormSettingsSchema = z.object({
   recipient_email: z.string().email("Enter a valid email address"),
   cc_emails: z
@@ -42,6 +52,11 @@ export const contactFormSettingsSchema = z.object({
     .max(30)
     .regex(/^[0-9+()\s-]*$/, "Digits, spaces, +, - and brackets only")
     .default("020 4539 5800"),
+  // Work With Us form page (/work-with-us/get-in-touch). Same recipients.
+  wwu_page_title: z.string().trim().min(1, "Required").max(120).default(DEFAULT_WWU_TITLE),
+  wwu_page_intro: z.string().trim().min(1, "Required").max(300).default(DEFAULT_WWU_INTRO),
+  wwu_next_steps: z.array(nextStepSchema).length(2, "Two steps").default(DEFAULT_WWU_NEXT_STEPS),
+  wwu_help_text: z.string().trim().max(300).default(DEFAULT_WWU_HELP_TEXT),
 });
  
 export type ContactFormSettings = z.infer<typeof contactFormSettingsSchema>;
@@ -62,4 +77,8 @@ export const DEFAULT_CONTACT_FORM_SETTINGS: ContactFormSettings = {
   next_steps: DEFAULT_NEXT_STEPS,
   direct_email: "legal@iconos-group.com",
   direct_phone: "020 4539 5800",
+  wwu_page_title: DEFAULT_WWU_TITLE,
+  wwu_page_intro: DEFAULT_WWU_INTRO,
+  wwu_next_steps: DEFAULT_WWU_NEXT_STEPS,
+  wwu_help_text: DEFAULT_WWU_HELP_TEXT,
 };

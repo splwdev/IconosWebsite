@@ -88,5 +88,6 @@ export async function updateContactFormSettings(
  
   revalidatePath("/admin/settings");
   revalidatePath("/contact");
+  revalidatePath("/work-with-us/get-in-touch");
   return { ok: true };
 }

@@ -9,12 +9,12 @@ export type ParentSection = (typeof PARENT_SECTIONS)[number];
 export type PageStatus = "draft" | "published";
 
 /**
- * Overview pages (/how-we-work, /what-we-do, /who-we-are, /clients) are singletons keyed by
+ * Overview pages (/how-we-work, /what-we-do, /who-we-are, /clients, /work-with-us) are singletons keyed by
  * slug, with parent_section null — deliberately, so none of the queries that
  * list a section's child pages by parent_section (nav dropdowns, programs
  * and services grids, [slug] routes) ever pick them up.
  */
-export const OVERVIEW_SLUGS = ["how-we-work", "what-we-do", "who-we-are", "clients"] as const;
+export const OVERVIEW_SLUGS = ["how-we-work", "what-we-do", "who-we-are", "clients", "work-with-us"] as const;
 export type OverviewSlug = (typeof OVERVIEW_SLUGS)[number];
 
 /** Pages that always exist and are always published: no unpublish, delete or slug changes. */
@@ -111,7 +111,7 @@ export const pageInputSchema = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["slug"],
-          message: "Overview pages can only be /how-we-work, /what-we-do, /who-we-are or /clients",
+          message: "Overview pages can only be /how-we-work, /what-we-do, /who-we-are, /clients or /work-with-us",
         });
       }
       if (data.show_in_nav) {
