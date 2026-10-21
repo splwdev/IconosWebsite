@@ -6,13 +6,17 @@ import {
   Mail,
   Users,
   Briefcase,
+  Settings,
 } from "lucide-react";
+import { getStaffContext } from "@/lib/admin/staff-context";
 import { createClient } from "@/lib/supabase/server";
 import { AdminSectionBadge } from "@/components/admin/section-badge";
 import { AdminCard } from "@/components/admin/admin-card";
  
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
+  const staff = await getStaffContext();
+  const isAdmin = staff?.role === "admin";
  
   const [
     { count: draftCount },
@@ -50,11 +54,22 @@ export default async function AdminDashboardPage() {
       <AdminSectionBadge icon={LayoutDashboard} label="Content Admin" />
       <h1 className="mb-2 mt-3 text-2xl font-semibold text-neutral-900">Dashboard</h1>
       <p className="mb-10 text-sm text-neutral-500">
-        Manage the Iconos Group website — blog posts, brand theme, and the
-        sections below as they come online.
+        Manage the Iconos Group website: enquiries, pages, blog posts, testimonials and the
+        brand theme.
       </p>
  
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <AdminCard
+          icon={Mail}
+          title="Enquiries"
+          description="Client and Work With Us enquiries from the website forms."
+          href="/admin/contact-submissions"
+          stat={
+            unreadSubmissionCount && unreadSubmissionCount > 0
+              ? `${unreadSubmissionCount} unread`
+              : "All caught up"
+          }
+        />
         <AdminCard
           icon={FileText}
           title="Posts"
@@ -83,24 +98,24 @@ export default async function AdminDashboardPage() {
           href="/admin/testimonials"
           stat={`${testimonialDraftCount ?? 0} draft${testimonialDraftCount === 1 ? "" : "s"} · ${testimonialPublishedCount ?? 0} published`}
         />
-        <AdminCard
-          icon={Mail}
-          title="Contact submissions"
-          description="Review enquiries received through the contact form."
-          href="/admin/contact-submissions"
-          stat={
-            unreadSubmissionCount && unreadSubmissionCount > 0
-              ? `${unreadSubmissionCount} unread`
-              : "All caught up"
-          }
-        />
-        <AdminCard
-          icon={Users}
-          title="Staff access"
-          description="Manage who can sign in to this admin area."
-          href="/admin/staff"
-          stat={`${staffCount ?? 0} staff member${staffCount === 1 ? "" : "s"}`}
-        />
+        {isAdmin && (
+          <AdminCard
+            icon={Settings}
+            title="Settings"
+            description="Where enquiries are emailed, confirmation emails, and the text around both forms."
+            href="/admin/settings"
+            stat="Contact and Work With Us forms"
+          />
+        )}
+        {isAdmin && (
+          <AdminCard
+            icon={Users}
+            title="Staff access"
+            description="Manage who can sign in to this admin area."
+            href="/admin/staff"
+            stat={`${staffCount ?? 0} staff member${staffCount === 1 ? "" : "s"}`}
+          />
+        )}
       </div>
     </div>
   );

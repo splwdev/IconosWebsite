@@ -1,4 +1,5 @@
 import { getStaffList } from "./actions";
+import { getStaffContext } from "@/lib/admin/staff-context";
 import { AddStaffForm } from "@/components/admin/add-staff-form";
 import { StaffMemberRow } from "@/components/admin/staff-member-row";
  
@@ -12,6 +13,16 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
  
 export default async function AdminStaffPage() {
+  const me = await getStaffContext();
+  if (me?.role !== "admin") {
+    return (
+      <div>
+        <h1 className="text-2xl font-semibold text-neutral-900">Staff access</h1>
+        <p className="mt-3 max-w-xl text-sm text-neutral-600">Only admins can manage who can sign in.</p>
+      </div>
+    );
+  }
+
   const staff = await getStaffList();
  
   return (

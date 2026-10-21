@@ -6,6 +6,8 @@ import { SiteHeader } from "@/components/site-header";
 import { getPublicNavGroups } from "@/lib/content/public-nav";
 import { buildPrimaryNav } from "@/lib/content/nav";
 import { signOut } from "../actions";
+import { getStaffContext } from "@/lib/admin/staff-context";
+import { AdminNav } from "@/components/admin/admin-nav";
  
 export default async function AdminLayout({
   children,
@@ -28,17 +30,15 @@ export default async function AdminLayout({
     redirect("/admin/login");
   }
  
-  const { data: staffRow } = await supabase
-    .from("staff_users")
-    .select("user_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
- 
-  if (!staffRow) {
+  const staff = await getStaffContext();
+  if (!staff) {
     redirect("/admin/login?error=not_authorized");
   }
- 
-  const { whatWeDo, howWeWork, customLinks } = await getPublicNavGroups();
+
+  const [{ whatWeDo, howWeWork, customLinks }, { count: unreadEnquiries }] = await Promise.all([
+    getPublicNavGroups(),
+    supabase.from("contact_submissions").select("*", { count: "exact", head: true }).is("read_at", null),
+  ]);
   const nav = buildPrimaryNav(whatWeDo, howWeWork, customLinks);
  
   return (
@@ -69,6 +69,8 @@ export default async function AdminLayout({
         </div>
       </div>
  
+      <AdminNav isAdmin={staff.role === "admin"} unreadEnquiries={unreadEnquiries ?? 0} />
+
       <div className="mx-auto max-w-5xl px-6 py-10">{children}</div>
     </div>
   );
