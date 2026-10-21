@@ -9,6 +9,11 @@ export interface Testimonial {
   attribution: string;
   /** Position and company — optional second line. */
   role: string;
+  /** Bold line above the quote on the Clients page ("" if none). */
+  headline: string;
+  /** Longer quote for the Clients page ("" means use `quote`). */
+  full_quote: string;
+  show_on_homepage: boolean;
   logo_url: string | null;
   logo_alt: string | null;
 }
@@ -33,14 +38,20 @@ export async function getPublishedTestimonial(id: string): Promise<Testimonial |
  * Published testimonials in display order. RLS only returns published
  * rows to the public, but the status filter is kept explicit so a signed-in
  * staff member previewing the site doesn't see drafts either.
+ *
+ * homepageOnly: just the ones ticked "Show on homepage" (the short-quote
+ * highlights); otherwise all of them (the Clients page).
  */
-export async function getPublishedTestimonials(): Promise<Testimonial[]> {
+export async function getPublishedTestimonials(
+  options: { homepageOnly?: boolean } = {}
+): Promise<Testimonial[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("testimonials")
     .select(PUBLIC_TESTIMONIAL_COLUMNS)
-    .eq("status", "published")
-    .order("sort_order", { ascending: true });
+    .eq("status", "published");
+  if (options.homepageOnly) query = query.eq("show_on_homepage", true);
+  const { data, error } = await query.order("sort_order", { ascending: true });
 
   if (error) {
     console.error("[testimonials] Failed to load:", error.message);

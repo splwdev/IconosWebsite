@@ -19,7 +19,7 @@ export default async function AdminTestimonialsPage() {
         <div>
           <h1 className="text-2xl font-semibold text-neutral-900">Testimonials</h1>
           <p className="mt-1 text-sm text-neutral-500">
-            Shown on the homepage and Clients page. Edit directly below — no separate editor.
+            Every published testimonial shows on the Clients page; tick “Show on homepage” for the homepage highlights. Edit directly below.
           </p>
         </div>
         <form action={createBlankTestimonial}>
