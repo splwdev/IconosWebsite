@@ -8,7 +8,7 @@ const TYPE_LABEL: Record<Page["page_type"], string> = {
   program: "Program",
   custom: "Custom page",
   home: "Homepage",
-  overview: "Section overview",
+  overview: "Overview page",
 };
  
 export default async function AdminPagesPage() {
@@ -28,7 +28,7 @@ export default async function AdminPagesPage() {
         <div>
           <h1 className="text-2xl font-semibold text-neutral-900">Pages</h1>
           <p className="mt-1 text-sm text-neutral-500">
-            The homepage, section overview pages, services, How We Work programs, and free-standing custom pages.
+            The homepage, overview pages (How We Work, Who We Are), services, How We Work programs, and free-standing custom pages.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
