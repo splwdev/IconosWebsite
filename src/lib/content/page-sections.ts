@@ -321,6 +321,8 @@ export const textChecklistSectionContentSchema = z.object({
   note: z.string().default(""),
   note_link_label: z.string().default(""),
   note_link_href: optionalHref,
+  /** Optional text after the link, e.g. "service." in "See our [Virtual DPO] service." */
+  note_after: z.string().default(""),
   list_label: z.string().default(""),
   items: lineList,
   /** Divider lines between checklist items. */
@@ -624,6 +626,7 @@ export function createBlankSection(type: SectionType): PageSection {
           note: "",
           note_link_label: "",
           note_link_href: "",
+          note_after: "",
           list_label: "",
           items: [],
           divided: false,

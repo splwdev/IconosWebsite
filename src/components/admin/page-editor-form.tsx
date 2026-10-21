@@ -1101,7 +1101,7 @@ function TextChecklistSectionFields({
         <Field label="Small note" hint="optional, under the button — e.g. Need ongoing support? See">
           <input className={inputClass} value={content.note} onChange={(e) => onChange({ ...content, note: e.target.value })} />
         </Field>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Field label="Note link label" hint="optional">
             <input
               className={inputClass}
@@ -1116,6 +1116,14 @@ function TextChecklistSectionFields({
               placeholder="/how-we-work/subscription-model"
               value={content.note_link_href}
               onChange={(e) => onChange({ ...content, note_link_href: e.target.value })}
+            />
+          </Field>
+          <Field label="Text after link" hint="optional">
+            <input
+              className={inputClass}
+              placeholder="e.g. service."
+              value={content.note_after}
+              onChange={(e) => onChange({ ...content, note_after: e.target.value })}
             />
           </Field>
         </div>

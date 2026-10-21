@@ -374,3 +374,64 @@ describe("text checklist additions", () => {
     expect(result.success).toBe(false);
   });
 });
+
+describe("0027_service_pages.sql", () => {
+  const sql = readFileSync(resolve(__dirname, "../../../supabase/migrations/0027_service_pages.sql"), "utf8");
+  const match = sql.match(/\$pages\$(\[[\s\S]*?\])\$pages\$/);
+  const pages = JSON.parse(match?.[1] ?? "[]") as {
+    slug: string;
+    original_like: string;
+    intro: string;
+    checklist: Record<string, unknown>;
+    cta: Record<string, unknown>;
+  }[];
+
+  it("covers the five remaining service pages", () => {
+    expect(pages.map((p) => p.slug)).toEqual([
+      "commercial",
+      "data-protection-gdpr",
+      "ip",
+      "employment",
+      "mergers-and-acquisitions",
+    ]);
+  });
+
+  it.each(pages.map((p) => [p.slug, p] as const))("%s sections pass the application schema", (_slug, p) => {
+    for (const [section_type, content] of [
+      ["text_checklist", p.checklist],
+      ["cta", p.cta],
+    ] as const) {
+      const result = pageSectionSchema.safeParse({ section_type, background: "none", content });
+      expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+    }
+    expect(p.checklist).toMatchObject({ divided: true, button_href: "/contact" });
+    expect(p.cta).toMatchObject({ style: "dark", button_href: "/contact" });
+    expect(p.intro.length).toBeGreaterThan(0);
+    expect(p.original_like.startsWith("<p>")).toBe(true);
+  });
+
+  it("puts 'service.' after the Virtual DPO link", () => {
+    const dp = pages.find((p) => p.slug === "data-protection-gdpr");
+    expect(dp?.checklist).toMatchObject({
+      note_link_href: "/how-we-work/virtual-data-protection-officer",
+      note_after: "service.",
+    });
+  });
+
+  it("guards title renames on the original value", () => {
+    expect(sql).toMatch(/title = 'Data Protection and GDPR'\s+where[\s\S]*?and title = 'Data Protection & GDPR'/);
+    expect(sql).toMatch(/and title = 'IP';/);
+  });
+
+  it("adds no section types, so it is safe in either deploy order", () => {
+    expect(sql).not.toMatch(/page_sections_section_type_check/);
+  });
+});
+
+describe("text checklist note_after", () => {
+  it("defaults to empty for sections saved before it existed", () => {
+    const parsed = pageSectionSchema.parse({ section_type: "text_checklist", background: "none", content: {} });
+    if (parsed.section_type !== "text_checklist") throw new Error("wrong type");
+    expect(parsed.content.note_after).toBe("");
+  });
+});
