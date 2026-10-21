@@ -331,3 +331,46 @@ describe("card grid final card", () => {
     expect(result.success).toBe(false);
   });
 });
+
+describe("0026_corporate_page.sql", () => {
+  const { sql, rows } = seededSections("0026_corporate_page.sql");
+
+  it("seeds the wireframe's sections", () => {
+    expect(rows.map((r) => r.section_type)).toEqual(["text_checklist", "cta"]);
+  });
+
+  it.each(rows.map((r) => [r.section_type, r] as const))("%s row passes the application schema", (_t, row) => {
+    const result = pageSectionSchema.safeParse(row);
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+  });
+
+  it("links the note to Managed Legal Services and divides the checklist", () => {
+    const tc = rows.find((r) => r.section_type === "text_checklist");
+    expect(tc?.content).toMatchObject({
+      note_link_href: "/how-we-work/subscription-model",
+      divided: true,
+      button_label: "Talk to us about corporate",
+    });
+  });
+
+  it("adds no section types, so it is safe in either deploy order", () => {
+    expect(sql).not.toMatch(/page_sections_section_type_check/);
+  });
+});
+
+describe("text checklist additions", () => {
+  it("default off for sections saved before they existed", () => {
+    const parsed = pageSectionSchema.parse({ section_type: "text_checklist", background: "none", content: { body: "x" } });
+    if (parsed.section_type !== "text_checklist") throw new Error("wrong type");
+    expect(parsed.content).toMatchObject({ button_label: "", note: "", note_link_href: "", divided: false });
+  });
+
+  it("rejects an unsafe note link", () => {
+    const result = pageSectionSchema.safeParse({
+      section_type: "text_checklist",
+      background: "none",
+      content: { note_link_label: "x", note_link_href: "javascript:alert(1)" },
+    });
+    expect(result.success).toBe(false);
+  });
+});

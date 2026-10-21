@@ -1083,14 +1083,43 @@ function TextChecklistSectionFields({
 }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-[3fr_2fr]">
-      <Field label="Text" hint="a blank line starts a new paragraph">
-        <textarea
-          rows={5}
-          className={inputClass}
-          value={content.body}
-          onChange={(e) => onChange({ ...content, body: e.target.value })}
+      <div className="space-y-3">
+        <Field label="Text" hint="a blank line starts a new paragraph">
+          <textarea
+            rows={5}
+            className={inputClass}
+            value={content.body}
+            onChange={(e) => onChange({ ...content, body: e.target.value })}
+          />
+        </Field>
+        <LinkFields
+          label={content.button_label}
+          href={content.button_href}
+          onLabelChange={(button_label) => onChange({ ...content, button_label })}
+          onHrefChange={(button_href) => onChange({ ...content, button_href })}
         />
-      </Field>
+        <Field label="Small note" hint="optional, under the button — e.g. Need ongoing support? See">
+          <input className={inputClass} value={content.note} onChange={(e) => onChange({ ...content, note: e.target.value })} />
+        </Field>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field label="Note link label" hint="optional">
+            <input
+              className={inputClass}
+              placeholder="Managed Legal Services"
+              value={content.note_link_label}
+              onChange={(e) => onChange({ ...content, note_link_label: e.target.value })}
+            />
+          </Field>
+          <Field label="Note link">
+            <input
+              className={inputClass}
+              placeholder="/how-we-work/subscription-model"
+              value={content.note_link_href}
+              onChange={(e) => onChange({ ...content, note_link_href: e.target.value })}
+            />
+          </Field>
+        </div>
+      </div>
       <div className="space-y-3">
         <Field label="Checklist label" hint="e.g. Ideal if">
           <input
@@ -1100,6 +1129,14 @@ function TextChecklistSectionFields({
           />
         </Field>
         <LinesField label="Checklist items" value={content.items} onChange={(items) => onChange({ ...content, items })} />
+        <label className="flex items-center gap-1.5 text-xs text-neutral-600">
+          <input
+            type="checkbox"
+            checked={content.divided}
+            onChange={(e) => onChange({ ...content, divided: e.target.checked })}
+          />
+          Divider lines between items
+        </label>
       </div>
     </div>
   );

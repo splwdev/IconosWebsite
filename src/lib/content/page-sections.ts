@@ -315,8 +315,16 @@ export type StepsSectionContent = z.infer<typeof stepsSectionContentSchema>;
 export const textChecklistSectionContentSchema = z.object({
   /** Plain text; a blank line starts a new paragraph. */
   body: z.string().default(""),
+  button_label: z.string().default(""),
+  button_href: optionalHref,
+  /** Small line under the button, ending in an optional link, e.g. "Need ongoing support? See [Managed Legal Services]". */
+  note: z.string().default(""),
+  note_link_label: z.string().default(""),
+  note_link_href: optionalHref,
   list_label: z.string().default(""),
   items: lineList,
+  /** Divider lines between checklist items. */
+  divided: z.boolean().default(false),
 });
 export type TextChecklistSectionContent = z.infer<typeof textChecklistSectionContentSchema>;
 
@@ -609,7 +617,17 @@ export function createBlankSection(type: SectionType): PageSection {
       return {
         section_type: "text_checklist",
         background: "none",
-        content: { body: "", list_label: "", items: [] },
+        content: {
+          body: "",
+          button_label: "",
+          button_href: "",
+          note: "",
+          note_link_label: "",
+          note_link_href: "",
+          list_label: "",
+          items: [],
+          divided: false,
+        },
       };
     case "comparison":
       return {
