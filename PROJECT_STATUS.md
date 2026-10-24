@@ -149,3 +149,18 @@ existing files on the local Windows machine, causing several rounds of
 zip-based delivery for anything beyond a brand-new file, and when
 debugging something that "should" work, verify the actual file contents
 on disk (`type filename` in `git cmd`) before assuming the code is wrong.
+## Maintenance mode (Oct 2026)
+
+- Admin → Settings → Maintenance mode: an on/off switch with an editable
+  heading and message. While on, every public address shows
+  /maintenance (rewritten, not redirected) with 503 + Retry-After, so
+  search engines treat it as temporary. /admin, /auth, the maintenance
+  page and static files are exempt; signed-in staff see the real site with
+  an amber banner. Stored in site_settings 'maintenance', read via
+  get_maintenance() (migration 0034), cached 15s per server instance, and
+  fails open (site stays up) if it can't be read.
+- The middleware moved from the project root to `src/middleware.ts`. With a
+  `src/` layout, Next.js only picks it up there: in `next dev` the root file
+  never ran (no nonce CSP header). It's now verified running in `next
+  start` and in workerd via the OpenNext build: nonce on every script, no
+  CSP violations, forms hydrate.

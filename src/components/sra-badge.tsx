@@ -7,7 +7,7 @@
  * Set NEXT_PUBLIC_SRA_BADGE_URL to the firm-specific iframe URL from the
  * SRA (format: https://cdn.yoshki.com/iframe/<id>r.html — available from
  * mySRA). Until then a plain link to the SRA register is shown instead.
- * cdn.yoshki.com is allowed in frame-src in next.config.ts / middleware.ts.
+ * cdn.yoshki.com is allowed in frame-src in next.config.ts / src/middleware.ts.
  */
 const SRA_NUMBER = "831403";
 const REGISTER_URL = `https://www.sra.org.uk/consumers/register/organisation/?sraNumber=${SRA_NUMBER}`;
