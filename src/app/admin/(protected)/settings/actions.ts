@@ -11,6 +11,11 @@ import {
 import { sendGraphMail } from "@/lib/graph-mail";
 import { formatSubmittedAt } from "@/lib/contact/email-text";
 import { getStaffContext } from "@/lib/admin/staff-context";
+import {
+  clearMaintenanceCache,
+  maintenanceSettingsSchema,
+  type MaintenanceSettings,
+} from "@/lib/settings/maintenance";
  
 export interface ContactFormSettingsResult {
   ok: boolean;
@@ -195,5 +200,45 @@ export async function setBlogEnabled(enabled: boolean): Promise<BlogSwitchResult
     message: enabled
       ? "The Blog is now live: it's in the menu, on the homepage and in the sitemap."
       : "The Blog is now hidden from the public. Signed-in staff can still preview it.",
+  };
+}
+
+export interface MaintenanceResult {
+  ok: boolean;
+  message: string;
+  errors?: string[];
+}
+
+/**
+ * Saves maintenance mode (on/off, heading, message). Admins only, also
+ * enforced by RLS. Other server instances pick up the change within about
+ * 15 seconds (the middleware's cache).
+ */
+export async function saveMaintenance(input: MaintenanceSettings): Promise<MaintenanceResult> {
+  const staff = await getStaffContext();
+  if (staff?.role !== "admin") return { ok: false, message: "Only admins can change maintenance mode." };
+
+  const parsed = maintenanceSettingsSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, message: "Please check the fields.", errors: parsed.error.issues.map((i) => i.message) };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("site_settings")
+    .upsert({ key: "maintenance", value: parsed.data, updated_by: staff.userId }, { onConflict: "key" })
+    .select("key");
+  if (error || !data || data.length === 0) {
+    if (error) console.error("[admin/settings] Failed to save maintenance mode:", error.message);
+    return { ok: false, message: "Couldn't save. You may not have permission to change this." };
+  }
+
+  clearMaintenanceCache();
+  revalidatePath("/", "layout");
+  return {
+    ok: true,
+    message: parsed.data.enabled
+      ? "Maintenance mode is ON. Visitors now see the maintenance page (allow up to a minute everywhere)."
+      : "Maintenance mode is off. The website is live again (allow up to a minute everywhere).",
   };
 }

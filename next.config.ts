@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
  
 // Two CSPs are sent, and browsers enforce both (the intersection):
 //
-// 1. middleware.ts — a strict, nonce-based policy ('strict-dynamic', no
+// 1. src/middleware.ts — a strict, nonce-based policy ('strict-dynamic', no
 //    'unsafe-inline'). Under Next.js 15 + the older @opennextjs/cloudflare,
 //    middleware never ran on Cloudflare, so this only applied in local dev.
 //    Since the Next.js 16 upgrade (Oct 2026) it does run on Cloudflare —

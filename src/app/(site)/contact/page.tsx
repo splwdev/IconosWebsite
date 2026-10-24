@@ -21,7 +21,7 @@ export default async function ContactPage({
 }) {
   // The Turnstile widget loads an external script — under our
   // 'strict-dynamic' CSP, that script tag must carry this request's nonce
-  // to be trusted (see middleware.ts).
+  // to be trusted (see src/middleware.ts).
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   const { service } = await searchParams;
   const initialService = parseServiceParam(service);

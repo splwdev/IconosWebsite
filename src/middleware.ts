@@ -32,6 +32,9 @@ export async function middleware(request: NextRequest) {
   // loading its own sub-resources), without needing a domain allow-list.
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  // Only the middleware may set this (for signed-in staff during
+  // maintenance); never trust one sent by the browser.
+  requestHeaders.delete("x-maintenance-preview");
   requestHeaders.set("Content-Security-Policy", contentSecurityPolicyHeaderValue);
  
   const response = await updateSession(request, requestHeaders);

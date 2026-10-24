@@ -20,7 +20,7 @@ export default async function WorkWithUsGetInTouchPage({
 }: {
   searchParams: Promise<{ interest?: string | string[] }>;
 }) {
-  // Turnstile's script needs this request's CSP nonce (see middleware.ts).
+  // Turnstile's script needs this request's CSP nonce (see src/middleware.ts).
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   const { interest } = await searchParams;
   const initialInterest = parseInterestParam(interest);

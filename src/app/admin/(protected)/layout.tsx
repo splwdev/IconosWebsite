@@ -9,6 +9,7 @@ import { buildPrimaryNav } from "@/lib/content/nav";
 import { signOut } from "../actions";
 import { getStaffContext } from "@/lib/admin/staff-context";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { loadMaintenance } from "@/lib/settings/load-maintenance";
  
 export default async function AdminLayout({
   children,
@@ -36,9 +37,10 @@ export default async function AdminLayout({
     redirect("/admin/login?error=not_authorized");
   }
 
-  const [{ whatWeDo, howWeWork, customLinks }, { count: unreadEnquiries }] = await Promise.all([
+  const [{ whatWeDo, howWeWork, customLinks }, { count: unreadEnquiries }, maintenance] = await Promise.all([
     getPublicNavGroups(),
     supabase.from("contact_submissions").select("*", { count: "exact", head: true }).is("read_at", null),
+    loadMaintenance(),
   ]);
   const nav = buildPrimaryNav(whatWeDo, howWeWork, customLinks, await isBlogEnabled());
  
@@ -71,6 +73,19 @@ export default async function AdminLayout({
       </div>
  
       <AdminNav isAdmin={staff.role === "admin"} unreadEnquiries={unreadEnquiries ?? 0} />
+
+      {maintenance.enabled && (
+        <div role="status" className="bg-amber-500 px-6 py-2 text-center text-sm font-medium text-neutral-900">
+          Maintenance mode is on: visitors see the maintenance page.{" "}
+          {staff.role === "admin" ? (
+            <Link href="/admin/settings" className="underline underline-offset-2">
+              Switch off in Settings
+            </Link>
+          ) : (
+            "An admin can switch it off in Settings."
+          )}
+        </div>
+      )}
 
       <div className="mx-auto max-w-5xl px-6 py-10">{children}</div>
     </div>
